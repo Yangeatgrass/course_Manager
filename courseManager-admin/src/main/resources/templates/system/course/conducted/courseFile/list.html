@@ -1,0 +1,634 @@
+<!DOCTYPE html>
+<html lang="zh" xmlns:th="http://www.thymeleaf.org" xmlns:shiro="http://www.pollix.at/thymeleaf/shiro">
+<head>
+    <th:block th:include="include :: header('课题资源')"/>
+    <th:block th:include="include :: layout-latest-css"/>
+    <th:block th:include="include :: ztree-css"/>
+
+</head>
+<body class="gray-bg">
+<div class="ui-layout-west">
+    <div class="box box-main">
+        <div class="box-header">
+            <div class="box-title">
+                <i class="fa fa-sitemap"></i> 小组列表
+            </div>
+            <div class="box-tools pull-right">
+                <a type="button" class="btn btn-box-tool" href="#" onclick="group()" title="管理小组"><i
+                        class="fa fa-edit"></i></a>
+                <button type="button" class="btn btn-box-tool" id="btnExpand" title="展开" style="display:none;"><i
+                        class="fa fa-chevron-up"></i></button>
+                <button type="button" class="btn btn-box-tool" id="btnCollapse" title="折叠"><i
+                        class="fa fa-chevron-down"></i></button>
+                <button type="button" class="btn btn-box-tool" id="btnRefresh" title="刷新小组"><i
+                        class="fa fa-refresh"></i></button>
+            </div>
+        </div>
+        <div class="ui-layout-content">
+            <div id="tree" class="ztree"></div>
+        </div>
+    </div>
+</div>
+
+<div class="ui-layout-center">
+    <div class="container-div">
+        <div class="row">
+            <div class="col-sm-12 search-collapse">
+                <form id="formId">
+                    <input type="hidden" id="groupId" name="groupId">
+                    <input type="hidden" id="parentId" name="parentId">
+                    <input type="hidden" id="userId" name="userId">
+                    <div class="select-list">
+                        <ul>
+                            <li>
+                                文件名：<input type="text" name="fileName"/>
+                            </li>
+                            <li>
+                                <label>文件类型：</label>
+                                <select name="fileType" th:with="type=${@dict.getType('sys_file_type')}">
+                                    <option th:each="dict : ${type}" th:text="${dict.dictLabel}"
+                                            th:value="${dict.dictValue}"></option>
+                                </select>
+                            </li>
+                            <li>
+                                <a class="btn btn-primary btn-rounded btn-sm" onclick="Filesearch()"><i
+                                        class="fa fa-search"></i>&nbsp;搜索</a>
+                                <a class="btn btn-warning btn-rounded btn-sm" onclick="resetPre()"><i
+                                        class="fa fa-refresh"></i>&nbsp;重置</a>
+                            </li>
+                        </ul>
+                    </div>
+                </form>
+            </div>
+
+            <div class="btn-group-sm" id="toolbar" role="group">
+
+            </div>
+
+            <!--布局 start-->
+            <div class="btn-group-sm" id="toolbar3" role="group" >
+                <div style="display: flex;justify-content: left;width: 500px">
+                    <div style="margin-right: 1%">
+                        <a class="btn btn-danger btn-sm" onclick="closeItem()">
+                            <i class="fa fa-reply-all"></i> 关闭
+                        </a>
+                        <a class="btn btn-danger btn-sm multiple disabled" onclick="$.operate.removeAll()"
+                           shiro:hasPermission="system:resource:remove">
+                            <i class="fa fa-remove"></i> 删除
+                        </a>
+                    </div>
+                    <div>
+                        <a class="btn btn-success btn-sm" data-toggle="modal" data-target="#myModal"
+                           shiro:hasPermission="system:resource:addfolder">
+                            <i class="fa fa-plus"></i> 新建文件夹
+                        </a>
+                        <a class="btn btn-info btn-sm" onclick="updateCourseResource()"
+                           shiro:hasPermission="system:resource:add">
+                            <i class="glyphicon glyphicon-open"></i> 上传文件
+                        </a>
+                        <a class="btn btn-default btn-sm" id="auditTap" onclick="inAudit()"
+                           shiro:hasPermission="system:resource:audit">
+                            <i class="glyphicon glyphicon-saved"></i> 资源审核
+                        </a>
+                    </div>
+
+                </div>
+
+                <!--面包屑-->
+                <span onclick="shou()" class="btns">根目录</span><i
+                    style="margin-left: -3px;margin-top: 20px;margin-bottom: 10px;color: #1a7bb9"
+                    class="fa fa-angle-right margin"></i>
+                <div id="mbx" style="display: inline-block"></div>
+            </div>
+
+
+            <div class="col-sm-12 select-table table-striped">
+                <table id="bootstrap-table3"></table>
+            </div>
+            <!--布局 end-->
+
+
+        </div>
+    </div>
+</div>
+
+<th:block th:include="include :: footer"/>
+<th:block th:include="include :: layout-latest-js"/>
+<th:block th:include="include :: ztree-js"/>
+
+
+<script th:inline="javascript">
+
+    var removeFlag = [[${@permission.hasPermi('system:resource:remove')}]];
+    var downloadFlag = [[${@permission.hasPermi('system:resource:download')}]];
+    var auditFlag = [[${@permission.hasPermi('system:resource:audit')}]];
+
+    var genderDatas = [[${@dict.getType('sys_user_sex')}]];
+    var fileType = [[${@dict.getType('sys_file_type')}]];
+
+    var prefix = ctx + "system/course";
+
+    var notPerson = 1;
+
+    var courseId = [[${courseId}]]
+    var mianbaoxie = [];
+
+    //文件夹信息
+    var folderObj = {
+        title: "",
+        fileId: -1
+    };
+
+    var coursePt = false; //课题位置
+    var groupPt = false; //小组位置
+    var persionPt = false; //个人位置
+
+    $(function () {
+        var panehHidden = false;
+        if ($(this).width() < 769) {
+            panehHidden = true;
+        }
+        $('body').layout({initClosed: panehHidden, west__size: 185});
+        // 回到顶部绑定
+        if ($.fn.toTop !== undefined) {
+            var opt = {
+                win: $('.ui-layout-center'),
+                doc: $('.ui-layout-center')
+            };
+            $('#scroll-up').toTop(opt);
+        }
+        setCourse();
+        queryResourceList();
+        queryDeptTree();
+    });
+    var options1 = {};
+
+    function queryResourceList() {
+        options1 = {
+            id: "bootstrap-table3",
+            toolbar: "toolbar3",
+            url: prefix + "/getResourceListByCourseId/" + courseId,
+            createUrl: prefix + "/add",
+            updateUrl: prefix + "/edit/{id}",
+            removeUrl: ctx + "system/file/remove",
+            exportUrl: prefix + "/export",
+            importUrl: prefix + "/importData",
+            importTemplateUrl: prefix + "/importTemplate",
+            sortName: "fileType",
+            sortOrder: "asc",
+            modalName: "课题资源",
+            columns: [
+                {
+                    checkbox: true,
+                },
+                {
+                    field: 'fileId',
+                    title: '文件ID',
+                    visible: false
+                },
+                {
+                    field: 'fileName',
+                    title: '文件名',
+                    align: 'left',
+                    width: '400px',
+                    formatter: function (value, row, index) {
+                        if (row.fileType === -1) {
+                            //文件夹
+                            return '<i class="glyphicon glyphicon-folder-open"></i> &nbsp; <a onclick="openFolder(\'' + row.fileId + '\',\'' + row.fileName + '\',\'' + row.parentId + '\')">' + row.fileName + '</a>'
+                        } else {
+                            if (row.fileType === 1) {
+                                return '<i class=\"glyphicon glyphicon-list-alt\"></i> &nbsp; <a onclick="onClickCell(\'' + row.fileType + '\',\'' + row.filePath + '\',\'' + row.fileId + '\')">' + row.fileName + '</a>'
+                            }
+                            if (row.fileType === 2) {
+                                return '<i class=\"glyphicon glyphicon-picture\"></i> &nbsp; <a onclick="onClickCell(\'' + row.fileType + '\',\'' + row.filePath + '\',\'' + row.fileId + '\')">' + row.fileName + '</a>'
+                            }
+                            if (row.fileType === 3) {
+                                return '<i class=\"glyphicon glyphicon-cd\"></i> &nbsp; <a onclick="onClickCell(\'' + row.fileType + '\',\'' + row.filePath + '\',\'' + row.fileId + '\')">' + row.fileName + '</a>'
+                            }
+                            if (row.fileType === 4) {
+                                return '<i class=\"glyphicon glyphicon-film\"></i> &nbsp; <a onclick="onClickCell(\'' + row.fileType + '\',\'' + row.filePath + '\',\'' + row.fileId + '\')">' + row.fileName + '</a>'
+                            }
+                            if (row.fileType === 5) {
+                                return '<i class=\"glyphicon glyphicon-book\"></i> &nbsp; <a onclick="onClickCell(\'' + row.fileType + '\',\'' + row.filePath + '\',\'' + row.fileId + '\')">' + row.fileName + '</a>'
+                            }
+                            //其他
+                            return '<i class=\"glyphicon glyphicon-file\"></i> &nbsp; <a onclick="">' + row.fileName + '</a>'
+                        }
+                    }
+                },
+                {
+                    field: 'fileType',
+                    title: '文件类型',
+                    align: "center",
+                    formatter: function (value, row, index) {
+                        return $.table.selectDictLabel(fileType, value);
+                    }
+                },
+                {
+                    field: 'fileSize',
+                    title: '文件大小',
+                    align: 'right',
+                    formatter: function (value, row, index) {
+                        if (row.fileType != -1) {
+                            return value;
+                        } else {
+                            return '-'
+                        }
+                    }
+                },
+                {
+                    field: 'downloadCount',
+                    title: '下载次数',
+                    align: "center",
+                },
+                {
+                    field: 'createBy',
+                    title: '创建者',
+                    align: "center",
+                },
+                {
+                    field: 'createTime',
+                    title: '上传时间',
+                    align: "center",
+                    formatter: function (value, row, index) {
+                        return row.createTime;
+                    }
+                },
+                {
+                    title: '操作',
+                    align: 'left',
+                    formatter: function (value, row, index) {
+                        var actions = [];
+                        actions.push('<a class="btn btn-danger btn-xs ' + removeFlag + '" href="javascript:void(0)" onclick="$.operate.remove(\'' + row.fileId + '\')"><i class="fa fa-remove"></i>删除</a> ');
+                        if (row.fileType != -1) {
+                            actions.push('<a class="btn btn-info btn-xs ' + downloadFlag + '" href="javascript:void(0)" onclick="downloadFile(\'' + row.fileId + '\')"><i class="fa fa-download"></i>下载</a> ');
+                        }
+                        return actions.join('');
+                    }
+                }]
+        };
+        $("#parentId").val(-1);
+        $.table.init(options1);
+    }
+
+    function Filesearch(){
+        $("#parentId").val(null);
+        $.table.search()
+    }
+
+    //预览
+    function onClickCell(type, path, fId) {
+        var fileExtension = path.substring(path.lastIndexOf('.') + 1);
+        // console.log("后缀："+fileExtension)
+        if (type == 1 && fileExtension == 'pdf') {
+            var openUrl = '';
+            var config = {
+                url: ctx + "system/file/pdfPreview/" + fId,
+                type: 'post',
+                success: function (result) {
+                    openUrl = result.msg;
+                    window.open(openUrl)
+                }
+            };
+            $.ajax(config)
+        }
+        if (type == 1 && fileExtension == 'txt') {
+            layer.open({
+                type: 1,
+                title: '文本预览',
+                closeBtn: 0,
+                offset: 'auto',
+                area: ['80%', '80%'],
+                closeBtn: 1,
+                // skin: 'layui-layer-nobg', //没有背景色
+                shadeClose: true,
+                content: '<iframe height="100%" width="100%" src="' + path + '" ></iframe>',
+            });
+        }
+        if (type == 2) {
+            layer.open({
+                type: 1,
+                title: '图片预览',
+                closeBtn: 0,
+                offset: 'auto',
+                area: ['80%', '80%'],
+                closeBtn: 1,
+                // skin: 'layui-layer-nobg', //没有背景色
+                shadeClose: true,
+                content: '<img style="" src="' + path + '">',
+
+            });
+        }
+        if (type == 4) {
+            layer.open({
+                type: 1,
+                title: '视频预览',
+                closeBtn: 0,
+                offset: 'auto',
+                area: ['753px', '470px'],
+                closeBtn: 1,
+                skin: 'layui-layer-nobg', //没有背景色
+                shadeClose: true,
+                content: '<video controls="controls" controlslist="nodownload  nofullscreen noremoteplayback"> <source type="video/mp4" src="' + path + '"/></video>'
+            });
+        }
+    }
+
+    function queryDeptTree() {
+        var url = ctx + "system/group/groupTreeData/" + courseId;
+        var options = {
+            url: url,
+            expandLevel: 2,
+            onClick: zOnClick
+        };
+        $.tree.init(options);
+
+        function zOnClick(event, treeId, treeNode) {
+            var level = treeNode.level;
+            console.log(treeNode.id);
+            console.log(treeNode.pId);
+            //清空面包屑
+            $("#mbx").load(location.href + " #mbx>*", "");
+            $("#parentId").val(null);
+            mianbaoxie = [];
+
+            //销毁表格
+            $("#bootstrap-table3").bootstrapTable('destroy');
+            if (level == 0) { //根节点
+                $("#parentId").val(-1);
+                options1.url = prefix + "/getResourceListByCourseId/" + courseId;//新请求地址
+                $.table.init(options1); //重新初始化
+                //清空小组id、用户id,用于新建文件夹
+                $("#groupId").val(null);
+                $("#userId").val(null);
+
+
+                $("#auditTap").show();
+
+                folderObj.title = "课题";
+                folderObj.fileId = -1;
+                setCourse();
+            }
+            if (level == 1) { //小组节点
+                $("#groupId").val(treeNode.id);
+                $("#parentId").val(-1);
+                options1.url = "/system/file/getResourceListByGroupIdAndCourseId/" + courseId;
+                $.table.init(options1); //重新初始化
+                //清空用户id
+                $("#userId").val(null);
+
+                $("#auditTap").show();
+
+                setGroup();
+            }
+            if (level == 2) { //学员节点
+                $("#userId").val(treeNode.id);
+                $("#parentId").val(-1);
+                options1.url = "/system/file/getResourceListByUserIdAndCourseId/" + courseId;
+                $.table.init(options1); //重新初始化
+                //清空小组id
+                $("#groupId").val(null);
+
+                $("#auditTap").hide();
+
+                setPerson();
+            }
+
+            if( $.common.equals($("#groupId").val(),-1)){
+                $("#toolbar3").hide()
+            }else{
+                $("#toolbar3").show()
+            }
+        }
+    }
+
+
+    //设置课题，清空其他
+    function setCourse() {
+        coursePt = true;
+        groupPt = false;
+        persionPt = false;
+    }
+
+    //设置小组，清空其他
+    function setGroup() {
+        coursePt = false;
+        groupPt = true;
+        persionPt = false;
+    }
+
+    //设置个人，清空其他
+    function setPerson() {
+        coursePt = false;
+        groupPt = false;
+        persionPt = true;
+    }
+
+    //获取当前位置
+    function getuploadPath() {
+        var o = {
+            "coursePt": coursePt,
+            "groupPt": groupPt,
+            "persionPt": persionPt
+        }
+        return o;
+    }
+
+
+    //获取上传信息
+    function getUploadInfo(o) {
+        var info = {
+            "name": "",
+            "key": null,
+            "flag": null,
+            "folderObj": folderObj
+        }
+        if (o.coursePt) {
+            //课题
+            info.name = "课题资源";
+            info.key = courseId;
+            info.flag = 0; //0代表上传到的是课题资源
+        } else if (o.groupPt) {
+            //小组
+            info.name = "小组资源";
+            info.key = $("#groupId").val();
+            info.flag = 1; //1代表上传到的是小组资源
+        } else if (o.persionPt) {
+            //个人
+            info.name = "个人资源";
+            info.key = $("#userId").val();
+            info.flag = 2; //2代表上传到的是个人资源
+        }
+
+        return info;
+    }
+
+    //回到文件root
+    function shou() {
+        $("#parentId").val(-1);
+        folderObj.fileId = $("#parentId").val();
+        $.table.search();
+        $("#mbx").load(location.href + " #mbx>*", "");
+        mianbaoxie = [];
+    }
+
+    //开打文件夹
+    function openFolder(fId, fileName, parentId) {
+        $("#parentId").val(fId);
+        $.table.search()
+        //面包屑
+        folderObj.title = fileName;
+        folderObj.fileId = fId;
+        mianbaoxie.push(folderObj);
+        for (var i = 0; i < mianbaoxie.length; i++) {
+            // console.log(mianbaoxie[i]);
+            //获取到数组里的元素
+            var mbx = document.getElementById("mbx");
+            var sapn1 = document.createElement("span");
+            var i2 = document.createElement("i");
+            sapn1.setAttribute("class", "btns");
+            sapn1.setAttribute("id", i);
+            i2.setAttribute("class", "fa fa-angle-right margin");
+            sapn1.innerHTML = mianbaoxie[i].title;
+            //点击事件
+            sapn1.onclick = function showmsg() {
+                var dangqian = $(this).attr('id');
+                // console.log(dangqian)
+                //当前id小于当前点击元素id的删除
+                for (var j = 0; j < mianbaoxie.length; j++) {
+                    if (j > dangqian) {
+                        $("#" + j).remove();
+                    }
+                }
+                $('#parentId').val(fId);
+                folderObj.fileId = $('#parentId').val();
+                $.table.search();
+            }
+
+        }
+        setTimeout(function () {
+            mbx.appendChild(sapn1)
+        }, 50);
+        sapn1.appendChild(i2);
+    }
+
+    $('#btnExpand').click(function () {
+        $._tree.expandAll(true);
+        $(this).hide();
+        $('#btnCollapse').show();
+    });
+
+    $('#btnCollapse').click(function () {
+        $._tree.expandAll(false);
+        $(this).hide();
+        $('#btnExpand').show();
+    });
+
+    $('#btnRefresh').click(function () {
+        queryDeptTree();
+    });
+
+    /* 自定义重置-表单重置/隐藏框/树节点选择色/搜索 */
+    function resetPre() {
+        resetDate();
+        $("#formId")[0].reset();
+        $("#parentId").val(-1);
+        $(".curSelectedNode").removeClass("curSelectedNode");
+        $("#mbx").load(location.href + " #mbx>*", "");
+        $.table.search();
+    }
+
+    /* 小组管理 */
+    function group() {
+        $.modal.openTab("小组列表", ctx + "system/course/asGroup/" + courseId);
+    }
+
+    /*上传课题公共资源*/
+    function updateCourseResource() {
+        $.modal.NotTopOpen("<span style='color: #1b6d85'>当前位置：</span> " + '<span>根目录<i class="fa fa-angle-right margin"></i>' +
+            '</span>' + $("#mbx").html(), ctx + "system/course/updateCourseResource/", 1000, 700)
+    }
+
+    //资源审核
+    function inAudit(){
+        $.modal.NotTopOpen("【<span style='color: #1b6d85'>"+getUploadInfo(getuploadPath()).name+"</span>】审核",ctx + "system/course/audit/",1200,800)
+    }
+
+    //新建文件夹
+    function saveFolder() {
+        var data = $('#folderForm').serializeArray();
+        data.push({"name": "fileType", "value": -1});//类型为文件夹
+        data.push({"name": "courseId", "value": courseId});//课题id
+        var pId = $('#parentId').val();
+        var gId = $('#groupId').val();
+        var uId = $('#userId').val();
+
+        if (pId == null || pId == '') {
+            data.push({"name": "parentId", "value": -1});
+        } else {
+            data.push({"name": "parentId", "value": pId});
+        }
+
+        if (gId != null && gId != '') {
+            data.push({"name": "groupId", "value": gId});
+        }
+        if (uId != null && uId != '') {
+            data.push({"name": "userId", "value": uId});
+        }
+
+        // console.log(data)
+
+        $("#myModal").modal("hide");//关闭模糊弹窗
+        resetModal();
+        $.operate.save(ctx + "system/file/addFolder", data);
+    }
+
+    //下载文件
+    function downloadFile(fileId) {
+        $.modal.confirm("确定下载此文件吗？", function () {
+            $.modal.loading("正在下载，请稍候...");
+            window.location.href = ctx + "common/download/resource?fileId=" + fileId;
+            $.modal.closeLoading();
+        });
+    }
+
+    //模糊窗口表单置空
+    function resetModal() {
+        $("#filefolderName").val(null)
+    }
+
+</script>
+
+<!--模糊弹窗-->
+<div class="modal inmodal" id="myModal" tabindex="-1" role="dialog" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content animated bounceInRight">
+            <form id="folderForm">
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label>文件夹名</label>
+                        <input type="text" id="filefolderName" name="fileName" placeholder="请输入文件夹名"
+                               class="form-control" onkeyup="this.value=this.value.replace(/[, ]/g,'')">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-primary" onclick="saveFolder()">保存</button>
+                    <button type="button" class="btn btn-white" data-dismiss="modal" onclick="resetModal()">关闭</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<style>
+    .btns {
+        cursor: pointer;
+        /*color: black;*/
+        font-weight: 700;
+        padding: 5px;
+        font-size: 13px;
+        color: #1a7bb9
+    }
+</style>
+</body>
+</html>

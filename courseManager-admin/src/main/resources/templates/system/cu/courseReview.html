@@ -1,0 +1,468 @@
+<!DOCTYPE html>
+<html lang="zh" xmlns:th="http://www.thymeleaf.org" xmlns:shiro="http://www.pollix.at/thymeleaf/shiro">
+<head>
+    <th:block th:include="include :: header('课题资源')"/>
+    <th:block th:include="include :: layout-latest-css"/>
+    <th:block th:include="include :: ztree-css"/>
+
+</head>
+<body class="gray-bg">
+<div class="ui-layout-west">
+    <div class="box box-main">
+        <div class="box-header">
+            <div class="box-title">
+                <i class="fa fa-sitemap"></i> 小组列表
+            </div>
+            <div class="box-tools pull-right">
+                <a type="button" class="btn btn-box-tool" href="#" onclick="group()" title="管理小组"><i
+                        class="fa fa-edit"></i></a>
+                <button type="button" class="btn btn-box-tool" id="btnExpand" title="展开" style="display:none;"><i
+                        class="fa fa-chevron-up"></i></button>
+                <button type="button" class="btn btn-box-tool" id="btnCollapse" title="折叠"><i
+                        class="fa fa-chevron-down"></i></button>
+                <button type="button" class="btn btn-box-tool" id="btnRefresh" title="刷新小组"><i
+                        class="fa fa-refresh"></i></button>
+            </div>
+        </div>
+        <div class="ui-layout-content">
+            <div id="tree" class="ztree"></div>
+        </div>
+    </div>
+</div>
+
+<div class="ui-layout-center">
+    <div class="container-div">
+        <div class="row">
+            <div class="col-sm-12 search-collapse">
+                <form id="formId">
+                    <input type="hidden" id="groupId" name="groupId">
+                    <input type="hidden" id="parentId" name="parentId">
+                    <input type="hidden" id="userId" name="userId">
+                    <div class="select-list">
+                        <ul>
+                            <li>
+                                <label>学员姓名：</label>
+                                <input type="text" name="studentName"/>
+                            </li>
+                            <li>
+                                <label>学号：</label>
+                                <input type="text" name="sNumber"/>
+                            </li>
+                            <li>
+                                <label>性别：</label>
+                                <select name="gender" th:with="type=${@dict.getType('sys_gender')}">
+                                    <option value="">所有</option>
+                                    <option th:each="dict : ${type}" th:text="${dict.dictLabel}"
+                                            th:value="${dict.dictValue}"></option>
+                                </select>
+                            </li>
+                            <li>
+                                <a class="btn btn-primary btn-rounded btn-sm" onclick="Filesearch()"><i
+                                        class="fa fa-search"></i>&nbsp;搜索</a>
+                                <a class="btn btn-warning btn-rounded btn-sm" onclick="resetPre()"><i
+                                        class="fa fa-refresh"></i>&nbsp;重置</a>
+                            </li>
+                        </ul>
+                    </div>
+                </form>
+            </div>
+
+            <div class="btn-group-sm" id="toolbar" role="group">
+
+            </div>
+
+            <!--布局 start-->
+            <div class="btn-group-sm" id="toolbar3" role="group">
+                <div style="display: flex;justify-content: left;width: 500px">
+                    <div style="margin-right: 1%">
+                        <a class="btn btn-danger btn-sm" onclick="closeItem()">
+                            <i class="fa fa-reply-all"></i> 关闭
+                        </a>
+                        <span id="toolbarTop">
+                            <a class="btn btn-warning btn-sm" onclick="exitGroup()" id="exitGroup">
+                                <i class="fa fa-remove">退出小组</i>
+                            </a>
+                            <a class="btn btn-success btn-sm" onclick="joinG()" id="JoinGroup">
+                                <i class="fa fa-check">加入小组</i>
+                            </a>
+                        </span>
+                    </div>
+
+                </div>
+
+
+            </div>
+
+
+            <div class="col-sm-12 select-table table-striped">
+                <table id="bootstrap-table3"></table>
+            </div>
+            <!--布局 end-->
+
+
+        </div>
+    </div>
+</div>
+
+<th:block th:include="include :: footer"/>
+<th:block th:include="include :: layout-latest-js"/>
+<th:block th:include="include :: ztree-js"/>
+
+
+<script th:inline="javascript">
+
+    var removeFlag = [[${@permission.hasPermi('system:resource:remove')}]];
+    var downloadFlag = [[${@permission.hasPermi('system:resource:download')}]];
+    var auditFlag = [[${@permission.hasPermi('system:resource:audit')}]];
+
+    var genderDatas = [[${@dict.getType('sys_user_sex')}]];
+    var fileType = [[${@dict.getType('sys_file_type')}]];
+    var statusDatas = [[${@dict.getType('sys_teacher_status')}]];
+    var gradeDatas = [[${@dict.getType('sys_student_grade')}]];
+    var sexDatas = [[${@dict.getType('sys_gender')}]];
+
+    var prefix = ctx + "system/course";
+
+    var notPerson = 1;
+
+    var Inthis = 0; //当前用户是否在本小组
+    var GroupManager = 0; //组长标识
+
+    var currentStudent = [[${currentStudent}]]
+
+    var courseId = [[${courseId}]]
+
+
+    $(function () {
+        var panehHidden = false;
+        if ($(this).width() < 769) {
+            panehHidden = true;
+        }
+        $('body').layout({initClosed: panehHidden, west__size: 185});
+        // 回到顶部绑定
+        if ($.fn.toTop !== undefined) {
+            var opt = {
+                win: $('.ui-layout-center'),
+                doc: $('.ui-layout-center')
+            };
+            $('#scroll-up').toTop(opt);
+        }
+        queryResourceList();
+        queryDeptTree();
+    });
+    var options1 = {};
+
+    function queryResourceList() {
+        options1 = {
+            id: "bootstrap-table3",
+            toolbar: "toolbar3",
+            url: prefix + "/getStudentList/" + courseId,
+            createUrl: prefix + "/add",
+            updateUrl: prefix + "/edit/{id}",
+            removeUrl: ctx + "system/file/remove",
+            exportUrl: prefix + "/export",
+            importUrl: prefix + "/importData",
+            importTemplateUrl: prefix + "/importTemplate",
+            modalName: "课题人员",
+            sortName: "grade",
+            sortOrder: "desc",
+            columns: [
+                // {
+                //     checkbox: true,
+                // },
+                {
+                    field: 'studentId',
+                    title: '主键',
+                    visible: false
+                },
+                {
+                    field: 'student',
+                    title: '头像',
+                    align: "center",
+                    width : "300px",
+                    formatter: function (value, row, index) {
+                        var actions = [];
+                        if (row.avatar == undefined || row.avatar === '') {
+                            actions.push('<img style="width: 18%;margin-top: 10px;" class="img-circle" alt="教员头像" src="/img/222.png"/>')
+                        } else {
+                            actions.push('<img style="width: 18%;margin-top: 10px;" class="img-circle" alt="教员头像" src="' + row.avatar + '"/>')
+                        }
+                        return actions.join('');
+                    }
+                },
+                {
+                    field: 'snumber',
+                    title: '学号',
+                    width : "300px",
+
+                },
+                {
+                    field: 'studentName',
+                    title: '姓名',
+                    formatter: function (value, row, index) {
+                        var actions = [];
+                        actions.push('<span>'+row.studentName+'</span>')
+                        if($.common.equals(row.studentId,currentStudent.studentId)){
+                            actions.push('<span style="color: crimson;font-weight: bold"> [我] </span>')
+                        }
+                        if($.common.equals(row.studentId,GroupManager)){
+                            actions.push('<span style="color: hotpink;font-weight: bold"> [组长] </span>')
+                        }
+                        return actions.join('');
+                    }
+                },
+
+                {
+                    field: 'grade',
+                    title: '年级',
+                    align: "center",
+                    sortable: true,
+                    formatter: function (value, row, index) {
+                        return $.table.selectDictLabel(gradeDatas, value);
+                    }
+                },
+                {
+                    field: 'gender',
+                    title: '性别',
+                    formatter: function (value, row, index) {
+                        return $.table.selectDictLabel(sexDatas, value);
+                    }
+                },
+                {
+                    field: 'professional',
+                    title: '专业方向'
+                },
+                {
+                    field: 'origin',
+                    title: '地址',
+                    align: 'center',
+                    width : "300px",
+
+                },
+                // {
+                //     title: '操作',
+                //     align: 'left',
+                //     formatter: function (value, row, index) {
+                //         var actions = [];
+                //         actions.push('<a class="btn btn-danger btn-xs ' + removeFlag + '" href="javascript:void(0)" onclick="$.operate.remove(\'' + row.fileId + '\')"><i class="fa fa-remove"></i>删除</a> ');
+                //         if (row.fileType != -1) {
+                //             actions.push('<a class="btn btn-info btn-xs ' + downloadFlag + '" href="javascript:void(0)" onclick="downloadFile(\'' + row.fileId + '\')"><i class="fa fa-download"></i>下载</a> ');
+                //         }
+                //         return actions.join('');
+                //     }
+                // }
+            ]
+        };
+        $.table.init(options1);
+
+        Inthis = 0;
+        exitG(Inthis)
+        $("#JoinGroup").hide()
+
+    }
+
+    function Filesearch() {
+        $("#parentId").val(null);
+        $.table.search()
+    }
+
+    function exitG(parms) {
+        if (parms) {
+            $("#exitGroup").show()
+            $("#JoinGroup").hide()
+        } else {
+            $("#exitGroup").hide()
+            $("#JoinGroup").show()
+        }
+    }
+
+    var groupId;
+
+    function queryDeptTree() {
+        var url = ctx + "system/group/groupTreeDataToReview/" + courseId;
+        var options = {
+            url: url,
+            expandLevel: 2,
+            onClick: zOnClick
+        };
+        $.tree.init(options);
+
+        function zOnClick(event, treeId, treeNode) {
+            var level = treeNode.level;
+            // console.log(treeNode.id);
+            // console.log(treeNode.pId);
+            //清空面包屑
+            $("#mbx").load(location.href + " #mbx>*", "");
+            $("#parentId").val(null);
+            mianbaoxie = [];
+
+            //销毁表格
+            $("#bootstrap-table3").bootstrapTable('destroy');
+            if (level == 0) { //根节点
+                options1.url = prefix + "/getStudentList/" + courseId;//新请求地址
+                $.table.init(options1); //重新初始化
+                //清空小组id、用户id,用于新建文件夹
+                $("#groupId").val(-1);
+
+                Inthis = 0;
+                GroupManager = 0;
+
+                $("#JoinGroup").hide()
+
+            }
+            if (level == 1) { //小组节点
+                $("#groupId").val(treeNode.id);
+                groupId = treeNode.id;
+
+                if ($.common.equals(groupId, -1)) {
+                    options1.url = "/system/cu/getCourseNotAssignment/" + courseId;
+                } else {
+                    options1.url = "/system/retrieval/getStudentsByGroupIdToReview/" + groupId;
+
+                    //获取当前小组信息
+                    var config1 = {
+                        url: "/system/group/getGroupById/"+groupId ,
+                        type: "post",
+                        dataType: "json",
+                        success: function (result) {
+                            if (!$.common.isEmpty(result.data.groupManager)){
+                                GroupManager = result.data.groupManager;
+                            }
+                        }
+                    };
+                    $.ajax(config1)
+                }
+
+                $.table.init(options1); //重新初始化
+
+                // console.log(Inthis)
+
+
+
+                //根据小组id查询该学员是否在该小组中
+                var config = {
+                    url: "/system/course/checkInGroup/" + groupId + "/" + currentStudent.studentId,
+                    type: "post",
+                    dataType: "json",
+                    success: function (result) {
+                        if ($.common.equals(result.code, 0)) {
+                            //存在
+                            Inthis = 1;
+                        } else {
+                            Inthis = 0;
+                        }
+                        exitG(Inthis)
+                    }
+                };
+                $.ajax(config)
+
+
+
+
+            }
+            // if (level == 2) { //学员节点
+            //     $("#userId").val(treeNode.id);
+            //     $("#parentId").val(-1);
+            //     options1.url = "/system/file/getResourceListByUserIdAndCourseId/" + courseId;
+            //     $.table.init(options1); //重新初始化
+            //     //清空小组id
+            //     $("#groupId").val(null);
+            //
+            //     $("#auditTap").hide();
+            //
+            //     setPerson();
+            // }
+
+            if ($.common.equals($("#groupId").val(), -1)) {
+                $("#toolbarTop").hide()
+            } else {
+                $("#toolbarTop").show()
+            }
+        }
+    }
+
+    //加入小组
+    function joinG() {
+        $.modal.confirm("确定加入小组吗？", function () {
+            data = {
+                "groupId": groupId,
+                "studentId": currentStudent.studentId,
+                "courseId": courseId,
+            }
+            $.operate.submit("/system/course/JoinGroup", "post", "json", data, function (re) {
+                if (re.code == 0) {
+                    Inthis = 1;
+                    exitG(Inthis)
+                }
+            });
+
+        });
+    }
+
+    //退出当前小组
+    function exitGroup() {
+
+        $.modal.confirm("确定退出小组吗？", function () {
+            data = {
+                "groupId": groupId,
+                "studentId": currentStudent.studentId,
+            }
+            $.operate.submit("/system/course/exitGroup", "post", "json", data, function (re) {
+                if (re.code == 0) {
+                    Inthis = 0;
+                    exitG(Inthis)
+                }
+            });
+
+        });
+
+    }
+
+
+    $('#btnExpand').click(function () {
+        $._tree.expandAll(true);
+        $(this).hide();
+        $('#btnCollapse').show();
+    });
+
+    $('#btnCollapse').click(function () {
+        $._tree.expandAll(false);
+        $(this).hide();
+        $('#btnExpand').show();
+    });
+
+    $('#btnRefresh').click(function () {
+        queryDeptTree();
+    });
+
+    /* 自定义重置-表单重置/隐藏框/树节点选择色/搜索 */
+    function resetPre() {
+        resetDate();
+        $("#formId")[0].reset();
+        $("#parentId").val(-1);
+        $(".curSelectedNode").removeClass("curSelectedNode");
+        $("#mbx").load(location.href + " #mbx>*", "");
+        $.table.search();
+    }
+
+    /* 小组管理 */
+    function group() {
+        $.modal.openTab("小组列表", ctx + "system/course/asGroup/" + courseId);
+    }
+
+
+</script>
+
+
+<style>
+    .btns {
+        cursor: pointer;
+        /*color: black;*/
+        font-weight: 700;
+        padding: 5px;
+        font-size: 13px;
+        color: #1a7bb9
+    }
+</style>
+</body>
+</html>

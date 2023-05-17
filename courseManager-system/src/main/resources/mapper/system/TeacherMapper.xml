@@ -1,0 +1,489 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.courseManager.system.mapper.TeacherMapper">
+
+    <resultMap type="Teacher" id="TeacherResult">
+        <result property="id" column="id"/>
+        <result property="teacherName" column="teacher_name"/>
+        <result property="type" column="type"/>
+        <result property="gender" column="gender"/>
+        <result property="birth" column="birth"/>
+        <result property="origin" column="origin"/>
+        <result property="nation"    column="nation"    />
+        <result property="idCard" column="id_card"/>
+        <result property="phoneNumber" column="phone_number"/>
+        <result property="idNumber" column="id_number"/>
+        <result property="joinTime" column="join_time"/>
+        <result property="political" column="political"/>
+        <result property="graduateSchool" column="graduate_school"/>
+        <result property="majorsStudied" column="majors_studied"/>
+        <result property="professional" column="professional"/>
+        <result property="graduationTime" column="graduation_time"/>
+        <result property="jobName" column="job_name"/>
+        <result property="biography" column="biography"/>
+        <result property="details" column="details"/>
+        <result property="avatar" column="avatar"/>
+        <result property="remark" column="remark"/>
+        <result property="createBy" column="create_by"/>
+        <result property="createTime" column="create_time"/>
+        <result property="updateBy" column="update_by"/>
+        <result property="updateTime" column="update_time"/>
+        <result property="delFlag" column="del_flag"/>
+        <result property="status" column="status"/>
+        <result property="flag"    column="flag"    />
+        <result property="audit"    column="audit"    />
+        <result property="registerFlag"    column="registerFlag"    />
+
+    </resultMap>
+
+    <sql id="selectTeacherVo">
+                select id, teacher_name, `type`, gender,nation, birth, origin, id_card, phone_number, id_number, join_time,
+                 political, graduate_school, majors_studied, professional, graduation_time, job_name, biography,
+                 details, avatar, remark, create_by, create_time, update_by, update_time, del_flag, status,flag,audit from teacher
+    </sql>
+
+    <sql id="TeacherSqlBasic">
+            t.id, t.teacher_name, t.`type`, t.gender,t.nation, t.birth, t.origin, t.id_card, t.phone_number, t.id_number, t.join_time,
+                 t.political, t.graduate_school, t.majors_studied, t.professional, t.graduation_time, t.job_name, t.biography,
+                 t.`details`, t.avatar, t.remark, t.create_by, t.create_time, t.update_by, t.update_time, t.del_flag, t.status,t.flag,t.audit
+    </sql>
+
+    <!--根据证件号查询出是否可用-->
+    <select id="checkNotUniqueWithIdNumber" parameterType="String" resultMap="TeacherResult">
+        <include refid="selectTeacherVo"/>
+        WHERE
+            id_number IN (
+            SELECT
+                login_name
+            FROM
+                sys_user
+            WHERE
+            login_name = #{idNumber}
+            ) limit 1
+    </select>
+
+    <select id="selectTeacherList" parameterType="Teacher" resultMap="TeacherResult">
+        SELECT
+        <include refid="TeacherSqlBasic"/>,
+        CASE
+        WHEN ( tu.user_id ) IN ( SELECT u.user_id FROM teacher_user tu JOIN sys_user u ON tu.user_id = u.user_id ) THEN
+        1 ELSE 0
+        END registerFlag
+        FROM
+        teacher t
+        LEFT JOIN teacher_user tu ON t.id = tu.teacher_id
+        <where>
+            <if test="teacherName != null  and teacherName != ''">
+                and t.teacher_name like concat('%', #{teacherName}, '%')
+            </if>
+            <if test="type != null  and type != ''">
+                and t.type like concat('%', #{type}, '%')
+            </if>
+            <if test="gender != null ">
+                and t.gender = #{gender}
+            </if>
+            <if test="birth != null ">
+                and t.birth = #{birth}
+            </if>
+            <if test="origin != null  and origin != ''">
+                and t.origin like concat('%', #{origin}, '%')
+            </if>
+            <if test="nation != null  and nation != ''"> and t.nation = #{nation}</if>
+            <if test="idCard != null  and idCard != ''">
+                and t.id_card like concat('%', #{idCard}, '%')
+            </if>
+            <if test="phoneNumber != null  and phoneNumber != ''">
+                and t.phone_number like concat('%', #{phoneNumber}, '%')
+            </if>
+            <if test="idNumber != null  and idNumber != ''">
+                and t.id_number like concat('%', #{idNumber}, '%')
+            </if>
+            <if test="joinTime != null ">
+                and t.join_time = #{joinTime}
+            </if>
+            <if test="political != null  and political != ''">
+                and t.political = #{political}
+            </if>
+            <if test="graduateSchool != null  and graduateSchool != ''">
+                and t.graduate_school like concat('%', #{graduateSchool}, '%')
+            </if>
+            <if test="majorsStudied != null  and majorsStudied != ''">
+                and t.majors_studied like concat('%', #{majorsStudied}, '%')
+            </if>
+            <if test="professional != null  and professional != ''">
+                and t.professional like concat('%', #{professional}, '%')
+            </if>
+            <if test="graduationTime != null ">
+                and t.graduation_time = #{graduationTime}
+            </if>
+            <if test="jobName != null  and jobName != ''">
+                and t.job_name like concat('%', #{jobName}, '%')
+            </if>
+            <if test="biography != null  and biography != ''">
+                and t.biography like concat('%', #{biography}, '%')
+            </if>
+            <if test="details != null  and details != ''">
+                and t.details like concat('%', #{details}, '%')
+            </if>
+            <if test="avatar != null  and avatar != ''">
+                and t.avatar like concat('%', #{avatar}, '%')
+            </if>
+            <if test="status != null ">
+                and t.status = #{status}
+            </if>
+            <if test="flag != null ">
+                and t.flag = #{flag}
+            </if>
+            <if test="audit != null "> and audit = #{audit}</if>
+            and t.del_flag = 0
+        </where>
+    </select>
+
+    <select id="selectTeacherById" parameterType="Long" resultMap="TeacherResult">
+        <include refid="selectTeacherVo"/>
+        where id = #{id}
+    </select>
+
+    <insert id="insertTeacher" parameterType="Teacher" useGeneratedKeys="true" keyProperty="id">
+        insert into teacher
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="teacherName != null">
+                teacher_name,
+            </if>
+            <if test="type != null">
+                type,
+            </if>
+            <if test="gender != null">
+                gender,
+            </if>
+            <if test="birth != null">
+                birth,
+            </if>
+            <if test="nation != null">nation,</if>
+
+            <if test="origin != null">
+                origin,
+            </if>
+            <if test="idCard != null">
+                id_card,
+            </if>
+            <if test="phoneNumber != null">
+                phone_number,
+            </if>
+            <if test="idNumber != null">
+                id_number,
+            </if>
+            <if test="joinTime != null">
+                join_time,
+            </if>
+            <if test="political != null">
+                political,
+            </if>
+            <if test="graduateSchool != null">
+                graduate_school,
+            </if>
+            <if test="majorsStudied != null">
+                majors_studied,
+            </if>
+            <if test="professional != null">
+                professional,
+            </if>
+            <if test="graduationTime != null">
+                graduation_time,
+            </if>
+            <if test="jobName != null">
+                job_name,
+            </if>
+            <if test="biography != null">
+                biography,
+            </if>
+            <if test="details != null">
+                details,
+            </if>
+            <if test="avatar != null">
+                avatar,
+            </if>
+            <if test="remark != null">
+                remark,
+            </if>
+            <if test="createBy != null">
+                create_by,
+            </if>
+            <if test="createTime != null">
+                create_time,
+            </if>
+            <if test="updateBy != null">
+                update_by,
+            </if>
+            <if test="updateTime != null">
+                update_time,
+            </if>
+            <if test="delFlag != null">
+                del_flag,
+            </if>
+            <if test="status != null">
+                status,
+            </if>
+            <if test="flag != null">flag,</if>
+            <if test="audit != null">audit,</if>
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="teacherName != null">
+                #{teacherName},
+            </if>
+            <if test="type != null">
+                #{type},
+            </if>
+            <if test="gender != null">
+                #{gender},
+            </if>
+            <if test="birth != null">
+                #{birth},
+            </if>
+            <if test="nation != null">#{nation},</if>
+            <if test="origin != null">
+                #{origin},
+            </if>
+            <if test="idCard != null">
+                #{idCard},
+            </if>
+            <if test="phoneNumber != null">
+                #{phoneNumber},
+            </if>
+            <if test="idNumber != null">
+                #{idNumber},
+            </if>
+            <if test="joinTime != null">
+                #{joinTime},
+            </if>
+            <if test="political != null">
+                #{political},
+            </if>
+            <if test="graduateSchool != null">
+                #{graduateSchool},
+            </if>
+            <if test="majorsStudied != null">
+                #{majorsStudied},
+            </if>
+            <if test="professional != null">
+                #{professional},
+            </if>
+            <if test="graduationTime != null">
+                #{graduationTime},
+            </if>
+            <if test="jobName != null">
+                #{jobName},
+            </if>
+            <if test="biography != null">
+                #{biography},
+            </if>
+            <if test="details != null">
+                #{details},
+            </if>
+            <if test="avatar != null">
+                #{avatar},
+            </if>
+            <if test="remark != null">
+                #{remark},
+            </if>
+            <if test="createBy != null">
+                #{createBy},
+            </if>
+            <if test="createTime != null">
+                #{createTime},
+            </if>
+            <if test="updateBy != null">
+                #{updateBy},
+            </if>
+            <if test="updateTime != null">
+                #{updateTime},
+            </if>
+            <if test="delFlag != null">
+                #{delFlag},
+            </if>
+            <if test="status != null">
+                #{status},
+            </if>
+            <if test="flag != null">#{flag},</if>
+            <if test="audit != null">#{audit},</if>
+        </trim>
+    </insert>
+
+    <update id="updateTeacher" parameterType="Teacher">
+        update teacher
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="teacherName != null">
+                teacher_name = #{teacherName},
+            </if>
+            <if test="type != null">
+                type = #{type},
+            </if>
+            <if test="gender != null">
+                gender = #{gender},
+            </if>
+            <if test="birth != null">
+                birth = #{birth},
+            </if>
+            <if test="origin != null">
+                origin = #{origin},
+            </if>
+            <if test="idCard != null">
+                id_card = #{idCard},
+            </if>
+            <if test="nation != null">nation = #{nation},</if>
+            <if test="phoneNumber != null">
+                phone_number = #{phoneNumber},
+            </if>
+            <if test="idNumber != null">
+                id_number = #{idNumber},
+            </if>
+            <if test="joinTime != null">
+                join_time = #{joinTime},
+            </if>
+            <if test="political != null">
+                political = #{political},
+            </if>
+            <if test="graduateSchool != null">
+                graduate_school = #{graduateSchool},
+            </if>
+            <if test="majorsStudied != null">
+                majors_studied = #{majorsStudied},
+            </if>
+            <if test="professional != null">
+                professional = #{professional},
+            </if>
+            <if test="graduationTime != null">
+                graduation_time = #{graduationTime},
+            </if>
+            <if test="jobName != null">
+                job_name = #{jobName},
+            </if>
+            <if test="biography != null">
+                biography = #{biography},
+            </if>
+            <if test="details != null">
+                details = #{details},
+            </if>
+            <if test="avatar != null">
+                avatar = #{avatar},
+            </if>
+            <if test="remark != null">
+                remark = #{remark},
+            </if>
+            <if test="createBy != null">
+                create_by = #{createBy},
+            </if>
+            <if test="createTime != null">
+                create_time = #{createTime},
+            </if>
+            <if test="updateBy != null">
+                update_by = #{updateBy},
+            </if>
+            <if test="updateTime != null">
+                update_time = #{updateTime},
+            </if>
+            <if test="delFlag != null">
+                del_flag = #{delFlag},
+            </if>
+            <if test="status != null">
+                status = #{status},
+            </if>
+            <if test="flag != null">flag = #{flag},</if>
+            <if test="audit != null">audit = #{audit},</if>
+        </trim>
+        where id = #{id}
+    </update>
+
+    <delete id="deleteTeacherById" parameterType="Long">
+
+                delete from teacher where id = #{id}
+
+    </delete>
+
+    <delete id="deleteTeacherByIds" parameterType="String">
+        update teacher set del_flag = 1 where id in
+        <foreach item="id" collection="array" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </delete>
+
+    <!--验证手机号的唯一性-->
+    <select id="checkEditPhoneUnique" resultMap="TeacherResult">
+        SELECT
+            id,
+            teacher_name
+        FROM
+            teacher
+        WHERE
+            id != #{teacherId}
+            AND phone_number = #{phoneNumber}
+            and del_flag = 0
+        LIMIT 1
+    </select>
+    <select id="checkPhoneUnique" resultMap="TeacherResult">
+        SELECT
+            id,
+            teacher_name
+        FROM
+            teacher
+        WHERE
+         phone_number = #{phoneNumber}
+         and del_flag = 0
+        LIMIT 1
+    </select>
+
+    <!--根据用户登录名查询教员-->
+    <select id="getTeacherByIdNumber" resultMap="TeacherResult">
+        SELECT
+            t.*
+        from
+            teacher t
+        WHERE t.id_number = #{userLoginName}
+        and t.del_flag = 0
+        limit 1
+    </select>
+
+    <select id="checkNotUniqueByTeacherId" resultMap="TeacherResult">
+        SELECT
+        t.*
+        FROM
+        teacher t JOIN teacher_user tu on t.id = tu.teacher_id
+        WHERE
+        tu.teacher_id = #{id}
+        limit 1
+    </select>
+
+    <!--验证当前用户登录名是否在教员表中存在-->
+    <select id="checkUniqueByLoginName" resultMap="TeacherResult">
+        SELECT
+             t.*
+        FROM
+            teacher t
+        WHERE
+            t.id_number = #{loginName}
+            and t.del_flag = 0
+        limit 1
+    </select>
+
+    <select id="getTeacherByIdNumberOnEdit" resultMap="TeacherResult">
+        SELECT
+             t.*
+        FROM
+            teacher t
+        WHERE
+            t.id_number = #{loginName}
+            and t.del_flag = 0
+            and t.id != (
+                SELECT
+                tu.teacher_id
+            FROM
+                sys_user u LEFT JOIN teacher_user tu on u.user_id = tu.user_id
+            WHERE
+                u.user_id = #{userId}
+            limit 1
+            )
+        limit 1
+    </select>
+</mapper>

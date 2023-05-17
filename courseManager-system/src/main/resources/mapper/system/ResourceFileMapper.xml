@@ -1,0 +1,667 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.courseManager.system.mapper.ResourceFileMapper">
+
+    <resultMap type="ResourceFile" id="ResourceFileResult">
+        <result property="fileId"    column="file_id"    />
+        <result property="fileName"    column="file_name"    />
+        <result property="fileType"    column="file_type"    />
+        <result property="fileSize"    column="file_size"    />
+        <result property="fileNounitSize"    column="file_nounit_size"    />
+        <result property="filePath"    column="file_path"    />
+        <result property="diskPath"    column="disk_path"    />
+        <result property="downloadCount"    column="download_count"    />
+        <result property="isFolder"    column="is_folder"    />
+        <result property="parentId"    column="parent_id"    />
+        <result property="identifier"    column="identifier"    />
+        <result property="createTime"    column="create_time"    />
+        <result property="createBy"    column="create_by"    />
+        <result property="updateTime"    column="update_time"    />
+        <result property="updateBy"    column="update_by"    />
+        <result property="delFlag"    column="del_flag"    />
+        <result property="visible"    column="visible"    />
+        <result property="audit"    column="audit"    />
+        <result property="courseName"    column="course_name"    />
+        <result property="courseId"    column="course_id"    />
+        <result property="courseDate"    column="course_date"    />
+    </resultMap>
+
+    <sql id="selectResourceFileVo">
+        select
+        file_id, file_name, file_type, file_size, file_path,disk_path,
+        is_folder, parent_id, identifier, create_time, create_by,download_count,file_nounit_size,
+        update_time, update_by, del_flag,audit
+        from resource_file
+    </sql>
+
+    <select id="selectResourceFileList" parameterType="ResourceFile" resultMap="ResourceFileResult">
+        <include refid="selectResourceFileVo"/>
+        <where>
+            <if test="fileName != null  and fileName != ''"> and file_name like concat('%', #{fileName}, '%')</if>
+            <if test="fileType != null  and fileType != ''"> and file_type = #{fileType}</if>
+            <if test="fileSize != null  and fileSize != ''"> and file_size = #{fileSize}</if>
+            <if test="fileNounitSize != null "> and file_nounit_size = #{fileNounitSize}</if>
+            <if test="filePath != null  and filePath != ''"> and file_path = #{filePath}</if>
+            <if test="diskPath != null  and diskPath != ''"> and disk_path = #{diskPath}</if>
+            <if test="isFolder != null "> and is_folder = #{isFolder}</if>
+            <if test="parentId != null "> and parent_id = #{parentId}</if>
+            <if test="identifier != null  and identifier != ''"> and identifier = #{identifier}</if>
+            and audit = 0
+        </where>
+    </select>
+
+    <select id="selectResourceFileByFileId" parameterType="Long" resultMap="ResourceFileResult">
+        <include refid="selectResourceFileVo"/>
+        where file_id = #{fileId}
+    </select>
+
+    <insert id="insertResourceFile" parameterType="ResourceFile" useGeneratedKeys="true" keyProperty="fileId">
+        insert into resource_file
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="fileName != null">file_name,</if>
+            <if test="fileType != null">file_type,</if>
+            <if test="fileSize != null">file_size,</if>
+            <if test="fileNounitSize != null">file_nounit_size,</if>
+            <if test="filePath != null">file_path,</if>
+            <if test="diskPath != null">disk_path,</if>
+            <if test="isFolder != null">is_folder,</if>
+            <if test="parentId != null">parent_id,</if>
+            <if test="identifier != null">identifier,</if>
+            <if test="createTime != null">create_time,</if>
+            <if test="createBy != null">create_by,</if>
+            <if test="updateTime != null">update_time,</if>
+            <if test="updateBy != null">update_by,</if>
+            <if test="delFlag != null">del_flag,</if>
+            <if test="audit != null">audit,</if>
+         </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="fileName != null">#{fileName},</if>
+            <if test="fileType != null">#{fileType},</if>
+            <if test="fileSize != null">#{fileSize},</if>
+            <if test="fileNounitSize != null">#{fileNounitSize},</if>
+            <if test="filePath != null">#{filePath},</if>
+            <if test="diskPath != null">#{diskPath},</if>
+            <if test="isFolder != null">#{isFolder},</if>
+            <if test="parentId != null">#{parentId},</if>
+            <if test="identifier != null">#{identifier},</if>
+            <if test="createTime != null">#{createTime},</if>
+            <if test="createBy != null">#{createBy},</if>
+            <if test="updateTime != null">#{updateTime},</if>
+            <if test="updateBy != null">#{updateBy},</if>
+            <if test="delFlag != null">#{delFlag},</if>
+            <if test="audit != null">#{audit},</if>
+         </trim>
+    </insert>
+
+    <update id="updateResourceFile" parameterType="ResourceFile">
+        update resource_file
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="fileName != null">file_name = #{fileName},</if>
+            <if test="fileType != null">file_type = #{fileType},</if>
+            <if test="fileSize != null">file_size = #{fileSize},</if>
+            <if test="fileNounitSize != null">file_nounit_size = #{fileNounitSize},</if>
+            <if test="filePath != null">file_path = #{filePath},</if>
+            <if test="diskPath != null">disk_path = #{diskPath},</if>
+            <if test="downloadCount != null">download_count = #{downloadCount},</if>
+            <if test="isFolder != null">is_folder = #{isFolder},</if>
+            <if test="parentId != null">parent_id = #{parentId},</if>
+            <if test="identifier != null">identifier = #{identifier},</if>
+            <if test="createTime != null">create_time = #{createTime},</if>
+            <if test="createBy != null">create_by = #{createBy},</if>
+            <if test="updateTime != null">update_time = #{updateTime},</if>
+            <if test="updateBy != null">update_by = #{updateBy},</if>
+            <if test="delFlag != null">del_flag = #{delFlag},</if>
+            <if test="audit != null">audit = #{audit},</if>
+        </trim>
+        where file_id = #{fileId}
+    </update>
+
+    <delete id="deleteResourceFileByFileId" parameterType="Long">
+        delete from resource_file where file_id = #{fileId}
+    </delete>
+
+    <update id="deleteResourceFileByFileIds" parameterType="String">
+        update resource_file set del_flag = 1 where file_id in
+        <foreach item="fileId" collection="array" open="(" separator="," close=")">
+            #{fileId}
+        </foreach>
+    </update>
+
+    <sql id="fileBaseSql">
+        f.file_id,
+        f.file_name,
+        f.file_type,
+        f.file_size,
+        f.file_nounit_size,
+        f.file_path,
+        f.disk_path,
+        f.download_count,
+        f.is_folder,
+        f.parent_id,
+        f.identifier,
+        f.create_time,
+        f.create_by,
+        f.update_time,
+        f.update_by,
+        f.audit,
+        f.del_flag
+    </sql>
+    <sql id="fileBaseSqlByVisible">
+        f.file_id,
+        f.file_name,
+        f.file_type,
+        f.file_size,
+        f.file_nounit_size,
+        f.file_path,
+        f.disk_path,
+        f.download_count,
+        f.is_folder,
+        f.parent_id,
+        f.identifier,
+        f.create_time,
+        f.create_by,
+        f.update_time,
+        f.update_by,
+        pf.visible,
+        f.audit
+    </sql>
+
+    <!--根据不同学员id查询可见的【公共】资源列表-->
+    <select id="getPublishListByUserId" resultMap="ResourceFileResult">
+        SELECT
+        DISTINCT <include refid="fileBaseSql"/>
+        FROM
+        resource_file f
+        JOIN resource_public_file pf ON f.file_id = pf.file_id
+        LEFT JOIN public_user_assign pua on pua.public_file_id = pf.public_file_id
+        LEFT JOIN sys_user u on u.user_id = pua.user_id
+        <where>
+            <if test="resourceFile.fileName != null  and resourceFile.fileName != ''"> and f.file_name like concat('%', #{resourceFile.fileName}, '%')</if>
+            <if test="resourceFile.fileType != null  and resourceFile.fileType != ''"> and f.file_type = #{resourceFile.fileType}</if>
+            <if test="resourceFile.fileSize != null  and resourceFile.fileSize != ''"> and f.file_size = #{resourceFile.fileSize}</if>
+            <if test="resourceFile.filePath != null  and resourceFile.filePath != ''"> and f.file_path = #{resourceFile.filePath}</if>
+            <if test="resourceFile.isFolder != null "> and f.is_folder = #{resourceFile.isFolder}</if>
+            <if test="resourceFile.parentId != null "> and f.parent_id = #{resourceFile.parentId}</if>
+
+            <if test="resourceFile.parentId == null "> and f.parent_id = -1 </if>
+
+            <if test="resourceFile.identifier != null  and resourceFile.identifier != ''"> and f.identifier = #{resourceFile.identifier}</if>
+            and (pf.visible = 0 OR ( pf.visible = 1 AND u.user_id = #{userId} ))
+            AND f.del_flag = 0
+        </where>
+    </select>
+
+    <!--查询【公共】资源列表-->
+    <select id="getPublishList" resultMap="ResourceFileResult">
+        SELECT
+        <include refid="fileBaseSqlByVisible"/>
+        FROM
+        resource_file f
+        JOIN resource_public_file pf ON f.file_id = pf.file_id
+        <where>
+            <if test="resourceFile.fileName != null  and resourceFile.fileName != ''"> and f.file_name like concat('%', #{resourceFile.fileName}, '%')</if>
+            <if test="resourceFile.fileType != null  and resourceFile.fileType != ''"> and f.file_type = #{resourceFile.fileType}</if>
+            <if test="resourceFile.fileSize != null  and resourceFile.fileSize != ''"> and f.file_size = #{resourceFile.fileSize}</if>
+            <if test="resourceFile.filePath != null  and resourceFile.filePath != ''"> and f.file_path = #{resourceFile.filePath}</if>
+            <if test="resourceFile.isFolder != null "> and f.is_folder = #{resourceFile.isFolder}</if>
+            <if test="resourceFile.parentId != null "> and f.parent_id = #{resourceFile.parentId}</if>
+
+            <if test="resourceFile.parentId == null "> and f.parent_id = -1 </if>
+
+            <if test="resourceFile.identifier != null  and resourceFile.identifier != ''"> and f.identifier = #{resourceFile.identifier}</if>
+            and f.del_flag = 0
+        </where>
+    </select>
+
+    <!--根据课题的id获取课题的资源列表-->
+    <select id="getResourceListByCourseId" resultMap="ResourceFileResult">
+        SELECT
+            <include refid="fileBaseSql"/>
+        FROM
+            resource_file f
+            LEFT JOIN resource_course_file cf ON f.file_id = cf.file_id
+        <where>
+            <if test="resourceFile.fileName != null  and resourceFile.fileName != ''"> and f.file_name like concat('%', #{resourceFile.fileName}, '%')</if>
+            <if test="resourceFile.fileType != null  and resourceFile.fileType != ''"> and f.file_type = #{resourceFile.fileType}</if>
+            <if test="resourceFile.fileSize != null  and resourceFile.fileSize != ''"> and f.file_size = #{resourceFile.fileSize}</if>
+            <if test="resourceFile.filePath != null  and resourceFile.filePath != ''"> and f.file_path = #{resourceFile.filePath}</if>
+            <if test="resourceFile.isFolder != null "> and f.is_folder = #{resourceFile.isFolder}</if>
+            <if test="resourceFile.parentId != null "> and f.parent_id = #{resourceFile.parentId}</if>
+
+            <if test="resourceFile.parentId == null "> and f.parent_id = -1 </if>
+
+            <if test="resourceFile.identifier != null  and resourceFile.identifier != ''"> and f.identifier = #{resourceFile.identifier}</if>
+            and cf.course_id = #{courseId}
+            and f.del_flag = 0
+            and f.audit = 0
+        </where>
+    </select>
+
+    <!--根据小组id查询到当前课题的小组资源-->
+    <select id="getResourceListByGroupIdAndCourseId" resultMap="ResourceFileResult">
+        SELECT
+            <include refid="fileBaseSql"/>
+        FROM
+        resource_file f
+        LEFT JOIN resource_group_file gf on f.file_id = gf.file_id
+        <where>
+            <if test="resourceFile.fileName != null  and resourceFile.fileName != ''"> and f.file_name like concat('%', #{resourceFile.fileName}, '%')</if>
+            <if test="resourceFile.fileType != null  and resourceFile.fileType != ''"> and f.file_type = #{resourceFile.fileType}</if>
+            <if test="resourceFile.fileSize != null  and resourceFile.fileSize != ''"> and f.file_size = #{resourceFile.fileSize}</if>
+            <if test="resourceFile.filePath != null  and resourceFile.filePath != ''"> and f.file_path = #{resourceFile.filePath}</if>
+            <if test="resourceFile.isFolder != null "> and f.is_folder = #{resourceFile.isFolder}</if>
+            <if test="resourceFile.parentId != null "> and f.parent_id = #{resourceFile.parentId}</if>
+
+            <if test="resourceFile.parentId == null "> and f.parent_id = -1 </if>
+
+            <if test="resourceFile.identifier != null  and resourceFile.identifier != ''"> and f.identifier = #{resourceFile.identifier}</if>
+            and gf.group_id = #{groupId}
+            and f.del_flag = 0
+            and f.audit = 0
+        </where>
+    </select>
+
+    <!--个人文件资源列表-->
+    <select id="getResourceListByUserIdAndCourseId" resultMap="ResourceFileResult">
+        SELECT
+        <include refid="fileBaseSql"/>
+        FROM
+        resource_file f
+        LEFT JOIN resource_person_file pf ON f.file_id = pf.file_id
+        <where>
+            <if test="resourceFile.fileName != null  and resourceFile.fileName != ''"> and f.file_name like concat('%', #{resourceFile.fileName}, '%')</if>
+            <if test="resourceFile.fileType != null  and resourceFile.fileType != ''"> and f.file_type = #{resourceFile.fileType}</if>
+            <if test="resourceFile.fileSize != null  and resourceFile.fileSize != ''"> and f.file_size = #{resourceFile.fileSize}</if>
+            <if test="resourceFile.filePath != null  and resourceFile.filePath != ''"> and f.file_path = #{resourceFile.filePath}</if>
+            <if test="resourceFile.isFolder != null "> and f.is_folder = #{resourceFile.isFolder}</if>
+            <if test="resourceFile.parentId != null "> and f.parent_id = #{resourceFile.parentId}</if>
+
+            <if test="resourceFile.parentId == null "> and f.parent_id = -1 </if>
+
+            <if test="resourceFile.identifier != null  and resourceFile.identifier != ''"> and f.identifier = #{resourceFile.identifier}</if>
+
+            <if test="resourceFile.params.beginTime != null and resourceFile.params.beginTime != ''"><!-- 开始时间检索 -->
+                AND date_format(f.create_time,'%y%m%d') &gt;= date_format(#{resourceFile.params.beginTime},'%y%m%d')
+            </if>
+            <if test="resourceFile.params.endTime != null and resourceFile.params.endTime != ''"><!-- 结束时间检索 -->
+                AND date_format(f.create_time,'%y%m%d') &lt;= date_format(#{resourceFile.params.endTime},'%y%m%d')
+            </if>
+            and pf.student_id = #{userId}
+            and f.del_flag = 0
+        </where>
+    </select>
+
+    <!--验证文件夹的唯一性-->
+    <select id="verifyFileFolderUnion" resultType="Integer">
+        SELECT
+            count(1)
+        FROM
+            resource_file f
+            LEFT JOIN resource_course_file cf ON f.file_id = cf.file_id
+        WHERE
+            cf.course_id = #{courseId}
+            AND f.parent_id = #{resourceFile.parentId}
+        <if test="resourceFile.fileType == -1 "> and f.file_type = -1 </if>
+        <if test="resourceFile.fileType != -1 "> and f.file_type in (0,1,2,3,4,5,6) </if>
+            AND f.file_name = #{resourceFile.fileName}
+            and f.del_flag = 0
+    </select>
+
+    <!--根据md5查询是否存在该文件-->
+    <select id="selectFileMd5Flag" resultMap="ResourceFileResult">
+        SELECT
+        <include refid="fileBaseSql"/>
+        FROM
+            resource_file f
+        WHERE
+            f.identifier = #{md5}
+        ORDER BY  f.create_time
+        LIMIT 1
+    </select>
+
+    <!--判断文件夹下是否还有文件-->
+    <select id="havaFile" resultType="int">
+        SELECT
+            count(1)
+        FROM
+            resource_file f
+        WHERE
+            f.parent_id = #{fileId}
+            and f.del_flag = 0
+            and f.audit = 0
+    </select>
+
+    <!--判断是否有重复文件名-->
+    <select id="reCFileName" resultMap="ResourceFileResult">
+        SELECT
+            <include refid="fileBaseSql"/>
+        FROM
+            resource_course_file cf
+            LEFT JOIN resource_file f ON f.file_id = cf.file_id
+            LEFT JOIN course c on c.course_id = cf.course_id
+        WHERE
+            f.parent_id = #{parentId}
+            and c.course_id = #{courseId}
+            AND f.identifier = #{identifier}
+            AND f.del_flag = 0
+            and f.audit = 0
+        ORDER BY create_time DESC
+    </select>
+    <select id="reGFileName" resultMap="ResourceFileResult">
+        SELECT
+            <include refid="fileBaseSql"/>
+        FROM
+            resource_group_file gf
+	        LEFT JOIN resource_file f  ON f.file_id = gf.file_id
+            LEFT JOIN `group` g on g.group_id = gf.group_id
+        WHERE
+            f.parent_id = #{parentId}
+            and g.group_id = #{groupId}
+            AND f.identifier = #{identifier}
+            AND f.del_flag = 0
+            and f.audit = 0
+        ORDER BY create_time DESC
+    </select>
+    <select id="rePFileName" resultMap="ResourceFileResult">
+        SELECT
+            <include refid="fileBaseSql"/>
+        FROM
+            resource_person_file pf
+	        LEFT JOIN resource_file f  ON f.file_id = pf.file_id
+            LEFT JOIN student s on s.student_id= pf.student_id
+        WHERE
+            f.parent_id = #{parentId}
+            and s.student_id = #{userId}
+            AND f.identifier = #{identifier}
+            AND f.del_flag = 0
+            and f.audit = 0
+            ORDER BY create_time DESC
+    </select>
+
+    <!--判断【公共资源】是否有重复文件名-->
+    <select id="rePublishFileName" resultMap="ResourceFileResult">
+        SELECT
+            <include refid="fileBaseSql"/>
+        FROM
+            resource_file f
+            JOIN resource_public_file pf ON f.file_id = pf.file_id
+        WHERE
+           f.identifier = #{identifier}
+           AND f.del_flag = 0
+            and f.audit = 0
+        ORDER BY create_time DESC
+    </select>
+
+    <!--删除此文件的所有权限用户-->
+    <delete id="deletePublishUserAssign">
+        DELETE
+        FROM
+            public_user_assign
+        WHERE
+            public_file_id = (
+            SELECT
+                pf.public_file_id
+            FROM
+                resource_public_file pf
+                JOIN resource_file f ON pf.file_id = f.file_id
+            WHERE
+            f.file_id = #{fileId}
+            )
+    </delete>
+
+    <!--添加此文件的权限用户集uIds-->
+    <insert id="insertPublishUserAssig">
+        insert into public_user_assign(public_file_id,user_id) values
+        <foreach item="uId" collection="uIds" separator=",">
+            (#{fileId},#{uId})
+        </foreach>
+    </insert>
+
+    <!--根据文件id查询公共文件的id-->
+    <select id="getPublishByFId" parameterType="long" resultType="java.lang.Long">
+        SELECT
+            pf.public_file_id
+        FROM
+            resource_public_file pf
+            JOIN resource_file f ON pf.file_id = f.file_id
+        WHERE
+        f.file_id = #{fileId}
+    </select>
+
+    <!--根据小组ID获取小组资源【审核】列表-->
+    <select id="getGroupAuditList" resultMap="ResourceFileResult">
+        SELECT
+        <include refid="fileBaseSql"/>
+        FROM
+        resource_file f JOIN resource_group_file gf on f.file_id = gf.file_id
+        <where>
+            <if test="resourceFile.fileName != null  and resourceFile.fileName != ''"> and f.file_name like concat('%', #{resourceFile.fileName}, '%')</if>
+            <if test="resourceFile.fileType != null  and resourceFile.fileType != ''"> and f.file_type = #{resourceFile.fileType}</if>
+            <if test="resourceFile.fileSize != null  and resourceFile.fileSize != ''"> and f.file_size = #{resourceFile.fileSize}</if>
+            <if test="resourceFile.filePath != null  and resourceFile.filePath != ''"> and f.file_path = #{resourceFile.filePath}</if>
+            <if test="resourceFile.isFolder != null "> and f.is_folder = #{resourceFile.isFolder}</if>
+            <if test="resourceFile.parentId != null "> and f.parent_id = #{resourceFile.parentId}</if>
+            <if test="resourceFile.identifier != null  and resourceFile.identifier != ''"> and f.identifier = #{resourceFile.identifier}</if>
+            and gf.group_id = #{groupId}
+            and f.audit = 1
+            and f.del_flag = 0
+        </where>
+    </select>
+
+    <!--根据课题ID获取课题资源【审核】列表-->
+    <select id="getCourseAuditList" resultMap="ResourceFileResult">
+        SELECT
+        <include refid="fileBaseSql"/>
+        FROM
+        resource_file f JOIN resource_course_file cf on f.file_id = cf.file_id
+        <where>
+            <if test="resourceFile.fileName != null  and resourceFile.fileName != ''"> and f.file_name like concat('%', #{resourceFile.fileName}, '%')</if>
+            <if test="resourceFile.fileType != null  and resourceFile.fileType != ''"> and f.file_type = #{resourceFile.fileType}</if>
+            <if test="resourceFile.fileSize != null  and resourceFile.fileSize != ''"> and f.file_size = #{resourceFile.fileSize}</if>
+            <if test="resourceFile.filePath != null  and resourceFile.filePath != ''"> and f.file_path = #{resourceFile.filePath}</if>
+            <if test="resourceFile.isFolder != null "> and f.is_folder = #{resourceFile.isFolder}</if>
+            <if test="resourceFile.parentId != null "> and f.parent_id = #{resourceFile.parentId}</if>
+            <if test="resourceFile.identifier != null  and resourceFile.identifier != ''"> and f.identifier = #{resourceFile.identifier}</if>
+            and cf.course_id = #{courseId}
+            and f.audit = 1
+            and f.del_flag = 0
+        </where>
+    </select>
+
+    <!--获取所有课题文件资源-->
+    <select id="selectResourceFileRetrievalList" resultMap="ResourceFileResult">
+        SELECT
+        c.course_name,
+        c.course_id,
+        c.course_date,
+        <include refid="fileBaseSql"/>
+        FROM
+        resource_file f LEFT JOIN resource_group_file gf on f.file_id = gf.file_id LEFT JOIN `group` g on g.group_id = gf.group_id
+        LEFT JOIN resource_course_file cf on cf.file_id = f.file_id JOIN course c on c.course_id = cf.course_id
+        LEFT JOIN resource_person_file pef on pef.file_id = f.file_id
+        LEFT JOIN resource_public_file pf on pf.file_id = f.file_id
+        <where>
+            <if test="resourceFile.fileName != null  and resourceFile.fileName != ''"> and f.file_name like concat('%', #{resourceFile.fileName}, '%')</if>
+            <if test="resourceFile.createBy != null  and resourceFile.createBy != ''"> and f.create_by like concat('%', #{resourceFile.createBy}, '%')</if>
+            <if test="params.beginTime != null and params.beginTime != ''"><!-- 开始时间检索 -->
+                AND date_format(f.create_time,'%y%m%d') &gt;= date_format(#{params.beginTime},'%y%m%d')
+            </if>
+            <if test="params.endTime != null and params.endTime != ''"><!-- 结束时间检索 -->
+                AND date_format(f.create_time,'%y%m%d') &lt;= date_format(#{params.endTime},'%y%m%d')
+            </if>
+            <if test="params.isTeacher != null and params.isTeacher != ''">and c.course_id in (SELECT course_id from course where user_id = #{params.isTeacher})</if>
+            <if test="params.isStudent != null and params.isStudent != ''">and c.course_id in (SELECT course_id FROM course_user where student_id = (SELECT student_id from student where student_id in (SELECT student_id from student_user where user_id = #{params.isStudent} ) and del_flag = 0 limit 1))</if>
+            <if test="resourceFile.fileType != null  and resourceFile.fileType != ''"> and f.file_type = #{resourceFile.fileType}</if>
+            <if test="resourceFile.fileSize != null  and resourceFile.fileSize != ''"> and f.file_size = #{resourceFile.fileSize}</if>
+            <if test="resourceFile.filePath != null  and resourceFile.filePath != ''"> and f.file_path = #{resourceFile.filePath}</if>
+            <if test="resourceFile.isFolder != null "> and f.is_folder = #{resourceFile.isFolder}</if>
+            <if test="resourceFile.parentId != null "> and f.parent_id = #{resourceFile.parentId}</if>
+            <if test="resourceFile.identifier != null  and resourceFile.identifier != ''"> and f.identifier = #{resourceFile.identifier}</if>
+            <if test="resourceFile.audit != null  and resourceFile.audit != ''"> and f.audit = #{resourceFile.audit}</if>
+            <if test="resourceFile.delFlag != null  and resourceFile.delFlag != ''"> and f.del_flag = #{resourceFile.delFlag}</if>
+            <if test="course.courseName != null  and course.courseName != ''"> and c.course_name like concat('%', #{course.courseName}, '%')</if>
+            <if test="course.courseDate != null  and course.courseDate != ''"> and c.course_date like concat('%', #{course.courseDate}, '%')</if>
+            <if test="course.courseId != null  and course.courseId != ''"> and c.course_id = #{course.courseId}</if>
+            and f.file_type != -1
+        </where>
+    </select>
+
+    <!--根据小组ids查询出所有小组的资源-->
+    <select id="getResourceRetrievalListByGroup"  parameterType="list" resultMap="ResourceFileResult">
+        SELECT
+        c.course_name,
+        c.course_id,
+        c.course_date,
+        <include refid="fileBaseSql"/>
+        FROM
+        resource_file f LEFT JOIN resource_group_file gf on f.file_id = gf.file_id LEFT JOIN `group` g on g.group_id = gf.group_id
+        LEFT JOIN resource_course_file cf on cf.file_id = f.file_id LEFT JOIN course c on c.course_id = cf.course_id
+        LEFT JOIN resource_person_file pef on pef.file_id = f.file_id
+        LEFT JOIN resource_public_file pf on pf.file_id = f.file_id
+        <where>
+            <if test="resourceFile.fileName != null  and resourceFile.fileName != ''"> and f.file_name like concat('%', #{resourceFile.fileName}, '%')</if>
+            <if test="resourceFile.fileType != null  and resourceFile.fileType != ''"> and f.file_type = #{resourceFile.fileType}</if>
+            <if test="resourceFile.createBy != null  and resourceFile.createBy != ''"> and f.create_by like concat('%', #{resourceFile.createBy}, '%')</if>
+            <if test="params.beginTime != null and params.beginTime != ''"><!-- 开始时间检索 -->
+                AND date_format(f.create_time,'%y%m%d') &gt;= date_format(#{params.beginTime},'%y%m%d')
+            </if>
+            <if test="params.endTime != null and params.endTime != ''"><!-- 结束时间检索 -->
+                AND date_format(f.create_time,'%y%m%d') &lt;= date_format(#{params.endTime},'%y%m%d')
+            </if>
+            <if test="longs.size()!=0">
+                and g.group_id in
+                <foreach item="gid" collection="longs" index="index" open="(" separator="," close=")">
+                    #{gid}
+                </foreach>
+            </if>
+            and f.file_type != -1
+        </where>
+
+
+    </select>
+
+    <!--获取所有文件资源-->
+    <select id="selectResourceFileRetrievalList2" resultMap="ResourceFileResult">
+        SELECT
+        c.course_name,
+        c.course_id,
+        c.course_date,
+        <include refid="fileBaseSql"/>
+        FROM
+        resource_file f LEFT JOIN resource_group_file gf on f.file_id = gf.file_id LEFT JOIN `group` g on g.group_id = gf.group_id
+        LEFT JOIN resource_course_file cf on cf.file_id = f.file_id LEFT JOIN course c on c.course_id = cf.course_id
+        LEFT JOIN resource_person_file pef on pef.file_id = f.file_id
+        LEFT JOIN resource_public_file pf on pf.file_id = f.file_id
+        <where>
+            <if test="resourceFile.fileName != null  and resourceFile.fileName != ''"> and f.file_name like concat('%', #{resourceFile.fileName}, '%')</if>
+            <if test="resourceFile.createBy != null  and resourceFile.createBy != ''"> and f.create_by like concat('%', #{resourceFile.createBy}, '%')</if>
+            <if test="params.beginTime != null and params.beginTime != ''"><!-- 开始时间检索 -->
+                AND date_format(f.create_time,'%y%m%d') &gt;= date_format(#{params.beginTime},'%y%m%d')
+            </if>
+            <if test="params.endTime != null and params.endTime != ''"><!-- 结束时间检索 -->
+                AND date_format(f.create_time,'%y%m%d') &lt;= date_format(#{params.endTime},'%y%m%d')
+            </if>
+            <if test="resourceFile.fileType != null  and resourceFile.fileType != ''"> and f.file_type = #{resourceFile.fileType}</if>
+            <if test="resourceFile.fileSize != null  and resourceFile.fileSize != ''"> and f.file_size = #{resourceFile.fileSize}</if>
+            <if test="resourceFile.filePath != null  and resourceFile.filePath != ''"> and f.file_path = #{resourceFile.filePath}</if>
+            <if test="resourceFile.isFolder != null "> and f.is_folder = #{resourceFile.isFolder}</if>
+            <if test="resourceFile.parentId != null "> and f.parent_id = #{resourceFile.parentId}</if>
+            <if test="resourceFile.identifier != null  and resourceFile.identifier != ''"> and f.identifier = #{resourceFile.identifier}</if>
+            <if test="resourceFile.audit != null  and resourceFile.audit != ''"> and f.audit = #{resourceFile.audit}</if>
+            <if test="resourceFile.delFlag != null "> and f.del_flag = #{resourceFile.delFlag}</if>
+            <if test="course.courseName != null  and course.courseName != ''"> and c.course_name like concat('%', #{course.courseName}, '%')</if>
+            <if test="course.courseDate != null  and course.courseDate != ''"> and c.course_date like concat('%', #{course.courseDate}, '%')</if>
+            and f.file_type != -1
+        </where>
+    </select>
+
+    <!--获取所有文件个数-->
+    <select id="getFileCount" resultType="java.lang.Integer">
+        select
+            count(file_id)
+        from
+            resource_file
+        where
+            file_type != -1
+    </select>
+
+    <!--获取文件下载总次数-->
+    <select id="getdownloadCount" resultType="java.lang.Integer">
+        SELECT
+            SUM(download_count)
+        FROM
+            resource_file
+        WHERE
+            file_type != -1
+    </select>
+
+    <select id="getResourceListByGroupIdAndCourseIdToSearch" resultMap="ResourceFileResult">
+        SELECT
+        <include refid="fileBaseSql"/>
+        FROM
+        resource_file f
+        LEFT JOIN resource_group_file gf on f.file_id = gf.file_id
+        <where>
+            <if test="resourceFile.fileName != null  and resourceFile.fileName != ''"> and f.file_name like concat('%', #{resourceFile.fileName}, '%')</if>
+            <if test="resourceFile.fileType != null  and resourceFile.fileType != ''"> and f.file_type = #{resourceFile.fileType}</if>
+            <if test="resourceFile.fileSize != null  and resourceFile.fileSize != ''"> and f.file_size = #{resourceFile.fileSize}</if>
+            <if test="resourceFile.filePath != null  and resourceFile.filePath != ''"> and f.file_path = #{resourceFile.filePath}</if>
+            <if test="resourceFile.isFolder != null "> and f.is_folder = #{resourceFile.isFolder}</if>
+<!--            <if test="resourceFile.parentId != null "> and f.parent_id = #{resourceFile.parentId}</if>-->
+
+<!--            <if test="resourceFile.parentId == null "> and f.parent_id = -1 </if>-->
+
+            <if test="resourceFile.identifier != null  and resourceFile.identifier != ''"> and f.identifier = #{resourceFile.identifier}</if>
+            and gf.group_id = #{groupId}
+            and f.del_flag = 0
+            and f.audit = 0
+        </where>
+    </select>
+
+    <select id="getResourceListByUserIdAndCourseIdToSearch" resultMap="ResourceFileResult">
+        SELECT
+        <include refid="fileBaseSql"/>
+        FROM
+        resource_file f
+        LEFT JOIN resource_person_file pf ON f.file_id = pf.file_id
+        <where>
+            <if test="resourceFile.fileName != null  and resourceFile.fileName != ''"> and f.file_name like concat('%', #{resourceFile.fileName}, '%')</if>
+            <if test="resourceFile.fileType != null  and resourceFile.fileType != ''"> and f.file_type = #{resourceFile.fileType}</if>
+            <if test="resourceFile.fileSize != null  and resourceFile.fileSize != ''"> and f.file_size = #{resourceFile.fileSize}</if>
+            <if test="resourceFile.filePath != null  and resourceFile.filePath != ''"> and f.file_path = #{resourceFile.filePath}</if>
+            <if test="resourceFile.isFolder != null "> and f.is_folder = #{resourceFile.isFolder}</if>
+<!--            <if test="resourceFile.parentId != null "> and f.parent_id = #{resourceFile.parentId}</if>-->
+
+<!--            <if test="resourceFile.parentId == null "> and f.parent_id = -1 </if>-->
+
+            <if test="resourceFile.identifier != null  and resourceFile.identifier != ''"> and f.identifier = #{resourceFile.identifier}</if>
+            and pf.student_id = #{userId}
+            and f.del_flag = 0
+        </where>
+    </select>
+
+    <select id="getResourceListByCourseIdToSearch" resultMap="ResourceFileResult">
+        SELECT
+        <include refid="fileBaseSql"/>
+        FROM
+        resource_file f
+        LEFT JOIN resource_course_file cf ON f.file_id = cf.file_id
+        <where>
+            <if test="resourceFile.fileName != null  and resourceFile.fileName != ''"> and f.file_name like concat('%', #{resourceFile.fileName}, '%')</if>
+            <if test="resourceFile.fileType != null  and resourceFile.fileType != ''"> and f.file_type = #{resourceFile.fileType}</if>
+            <if test="resourceFile.fileSize != null  and resourceFile.fileSize != ''"> and f.file_size = #{resourceFile.fileSize}</if>
+            <if test="resourceFile.filePath != null  and resourceFile.filePath != ''"> and f.file_path = #{resourceFile.filePath}</if>
+            <if test="resourceFile.isFolder != null "> and f.is_folder = #{resourceFile.isFolder}</if>
+<!--            <if test="resourceFile.parentId != null "> and f.parent_id = #{resourceFile.parentId}</if>-->
+
+<!--            <if test="resourceFile.parentId == null "> and f.parent_id = -1 </if>-->
+
+            <if test="resourceFile.identifier != null  and resourceFile.identifier != ''"> and f.identifier = #{resourceFile.identifier}</if>
+            and cf.course_id = #{courseId}
+            and f.del_flag = 0
+            and f.audit = 0
+        </where>
+    </select>
+</mapper>

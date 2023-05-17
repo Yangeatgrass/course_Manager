@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.courseManager.system.mapper.ResourcePublicFileMapper">
+
+    <resultMap type="ResourcePublicFile" id="ResourcePublicFileResult">
+        <result property="publicFileId"    column="public_file_id"    />
+        <result property="fileId"    column="file_id"    />
+        <result property="visible"    column="visible"    />
+    </resultMap>
+
+    <sql id="selectResourcePublicFileVo">
+        select public_file_id, file_id, visible from resource_public_file
+    </sql>
+
+    <select id="selectResourcePublicFileList" parameterType="ResourcePublicFile" resultMap="ResourcePublicFileResult">
+        <include refid="selectResourcePublicFileVo"/>
+        <where>
+            <if test="fileId != null "> and file_id = #{fileId}</if>
+            <if test="visible != null "> and visible = #{visible}</if>
+        </where>
+    </select>
+
+    <select id="selectResourcePublicFileByPublicFileId" parameterType="Long" resultMap="ResourcePublicFileResult">
+        <include refid="selectResourcePublicFileVo"/>
+        where public_file_id = #{publicFileId}
+    </select>
+
+    <insert id="insertResourcePublicFile" parameterType="ResourcePublicFile" useGeneratedKeys="true" keyProperty="publicFileId">
+        insert into resource_public_file
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="fileId != null">file_id,</if>
+            <if test="visible != null">visible,</if>
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="fileId != null">#{fileId},</if>
+            <if test="visible != null">#{visible},</if>
+        </trim>
+    </insert>
+
+    <update id="updateResourcePublicFile" parameterType="ResourcePublicFile">
+        update resource_public_file
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="fileId != null">file_id = #{fileId},</if>
+            <if test="visible != null">visible = #{visible},</if>
+        </trim>
+        where public_file_id = #{publicFileId}
+    </update>
+
+    <delete id="deleteResourcePublicFileByPublicFileId" parameterType="Long">
+        delete from resource_public_file where public_file_id = #{publicFileId}
+    </delete>
+
+    <delete id="deleteResourcePublicFileByPublicFileIds" parameterType="String">
+        delete from resource_public_file where public_file_id in
+        <foreach item="publicFileId" collection="array" open="(" separator="," close=")">
+            #{publicFileId}
+        </foreach>
+    </delete>
+
+    <!--根据文件id删除该公共文件与所有学员的关联-->
+    <delete id="deletePublicFileWithStudentByFId">
+        DELETE
+        FROM
+            public_user_assign
+        WHERE
+            public_file_id = (
+            SELECT
+                public_file_id
+            FROM
+                resource_public_file
+            WHERE
+            file_id = #{fileId}
+            )
+    </delete>
+
+    <!--根据文件id获取公共文件关联id-->
+    <select id="getPublicFileByfId" resultMap="ResourcePublicFileResult">
+        <include refid="selectResourcePublicFileVo"/>
+        WHERE
+            file_id = #{fId}
+    </select>
+
+    <delete id="deletePublicFileByFIds">
+        DELETE
+        FROM
+            resource_public_file
+        WHERE
+        file_id in
+        <foreach item="fileId" collection="array" open="(" separator="," close=")">
+            #{fileId}
+        </foreach>
+    </delete>
+</mapper>

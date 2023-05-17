@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html lang="zh" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <th:block th:include="include :: header('选课详情信息')"/>
+    <th:block th:include="include :: summernote-css"/>
+    <th:block th:include="include :: datetimepicker-css"/>
+
+    <link th:href="@{/ruoyi/css/ry-ui.css}" rel="stylesheet"/>
+    <!--    <link th:href="@{/css/font-awesome.min.css}" rel="stylesheet"/>-->
+    <script th:src="@{/js/jquery.min.js}"></script>
+    <!--    <script th:src="@{/ruoyi/js/fast.js}"></script>-->
+    <style th:inline="css">
+        body {
+            font: 14px/1.5 "PingFang SC", "Lantinghei SC", "Microsoft YaHei", "HanHei SC", "Helvetica Neue", "Open Sans", Arial, "Hiragino Sans GB", "å¾®è½¯é›…é»‘", STHeiti, "WenQuanYi Micro Hei", SimSun, sans-serif;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        @media screen and (max-width: 768px) {
+            .page {
+                width: 100%;
+                margin: 0 auto;
+                padding: 0px;
+                background-color: #fff;
+                box-shadow: #5079d9 2px 1px 5px 3px;
+            }
+        }
+
+        @media screen and (min-width: 768px) {
+            .page {
+                width: 70%;
+                margin: 0 auto;
+                padding: 10px 18px;
+                background-color: #ffffff;
+            }
+        }
+
+        .articleImg {
+            height: 120px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .articleImg .textBox {
+            position: absolute;
+            left: 0;
+            bottom: 40px;
+            z-index: 10;
+            padding: 0 40px;
+            width: 100%;
+            font-size: 14px;
+            color: #fff;
+            line-height: 28px;
+            vertical-align: bottom;
+            overflow: hidden;
+        }
+
+        .articleImg .textBox h1 {
+            font-size: 28px;
+            color: #fff;
+            line-height: 32px;
+            vertical-align: bottom;
+        }
+
+        .articleImg .moreInfo {
+            font-size: 14px;
+            color: #fff;
+            line-height: 28px;
+        }
+
+        .overlay {
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            width: 100%;
+            -webkit-transition: all 0.2s ease;
+            -moz-transition: all 0.2s ease;
+            transition: all 0.2s ease;
+            /*background-image: -webkit-linear-gradient(180deg, rgba(0, 0, 0, 0.05) 5%, rgba(0, 0, 0, 0.85) 100%);*/
+            /*background-image: -moz-linear-gradient(180deg, rgba(0, 0, 0, 0.05) 5%, rgba(0, 0, 0, 0.85) 100%);*/
+            /*background-image: linear-gradient(180deg, rgba(0, 0, 0, 0.05) 5%, rgba(0, 0, 0, 0.85) 100%);*/
+            background-size: 100%;
+        }
+
+        .articleImg .img {
+            width: 100%;
+            height: 360px;
+            overflow: hidden;
+        }
+
+        .articleDetail {
+            margin-top: 20px;
+            padding: 20px;
+            border-top: 1px dotted #ddd;
+            text-align: justify;
+        }
+
+        .articleDetail p {
+            color: #4a4a4a;
+            line-height: 26px;
+            font-size: 15px !important;
+            margin-bottom: 15px;
+            text-align: justify;
+        }
+
+        .articleDetail img {
+            margin: 0 0 8px 0;
+            max-width: 100%;
+            vertical-align: middle;
+        }
+
+
+        .footerInfo.top {
+            text-align: right;
+            border-top: 0;
+            margin-top: 0;
+        }
+
+        .footerInfo {
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 1px dotted #ddd;
+        }
+
+        .footerInfo .iconSpan {
+            cursor: pointer;
+            font-size: 12px;
+            padding: 4px 10px;
+            line-height: 12px;
+            border-radius: 4px;
+            background: #f4f4f4;
+            color: #999;
+            margin-left: 5px;
+            text-decoration: none;
+        }
+
+        .footerInfo .iconSpan:hover {
+            background: #51e0c1;
+            color: #fff;
+        }
+
+
+        /*jumptHref*/
+        /*.jumpHrefGrid {*/
+        /*    position: fixed;*/
+        /*    left: 0px;*/
+        /*    top: 0px;*/
+        /*    width: 100%;*/
+        /*    height: 100%;*/
+        /*    z-index: 1200;*/
+        /*    overflow: hidden;*/
+        /*    text-align: center;*/
+        /*    background: url("[[@{/}]]images/bgTree.png") left bottom repeat-x rgb(246, 246, 246);*/
+        /*}*/
+
+        .jumpHrefGrid .hrefGroup {
+            width: 360px;
+            height: 360px;
+            padding-top: 120px;
+            background: url('[[@{/}]]images/logo_filem.png') center top no-repeat;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            margin-top: -180px;
+            margin-left: -180px;
+            text-align: center;
+            color: rgb(51, 51, 51);
+            overflow: hidden;
+        }
+
+        .jumpHrefGrid .hrefGroup h4 {
+            font-size: 18px;
+            line-height: 30px;
+            margin-top: 10px;
+            margin-bottom: 10px;
+        }
+
+        .jumpHrefGrid .hrefGroup p {
+            font-size: 14px;
+            line-height: 20px;
+            margin-bottom: 10px;
+        }
+
+        .jumpHrefGrid .hrefGroup p span {
+            color: rgb(4, 172, 113);
+            margin: 0px 5px;
+        }
+
+        .jumpHrefGrid .hrefGroup .btn {
+            display: inline-block;
+            padding: 0px 20px;
+            color: rgb(4, 172, 113);
+            border-radius: 16px;
+            line-height: 30px;
+            font-size: 12px;
+            border: 1px solid rgb(4, 172, 113);
+        }
+
+        /*文章底部版权信息*/
+        .copyInfo {
+            text-align: center;
+            padding: 20px 0 40px;
+            font-size: 12px;
+            color: #999;
+            line-height: 18px;
+            border-bottom: 1px dotted #ddd;
+        }
+
+        .copyInfo .theEnd {
+            font-size: 24px;
+            color: #333;
+            line-height: 36px;
+        }
+
+        .mt10 {
+            margin-top: 10px;
+        }
+
+        .copyInfo .channelSite {
+            margin: 0 5px;
+            color: #5079d9;
+        }
+
+        .copyInfo a {
+            text-decoration: none;
+        }
+
+        .articleDetail img {
+            margin: 0 0 8px 0;
+            max-width: 100%;
+            vertical-align: middle;
+        }
+
+
+    </style>
+</head>
+<body class="white-bg">
+<div class="wrapper wrapper-content animated fadeInRight ibox-content">
+    <div class="page">
+        <div class="articleImg">
+            <div class="textBox">
+                <h2 style="color: black">[[${course.courseName}]]</h2>
+                <button type="button" class="btn btn-sm btn-primary" style="margin-top: 10px" onclick="submitHandler()">
+                    <i
+                            class="fa fa-check"></i>加 入
+                </button>&nbsp;
+            </div>
+            <!--            <div class="overlay"></div>-->
+            <!--            <img class="img" th:src="@{/img/courseImg.jpg}" style="display:block;background-size:cover;object-fit: cover">-->
+        </div>
+
+        <!--标签-->
+        <div class="footerInfo top">
+            <a data-toggle="modal" data-target="#myModal"><img class="chat-avatar avatarAc" data-toggle="popover"
+                                                               th:src="${teacher.avatar}" alt=""></a>
+            <a class="iconSpan" style="color: #a1abff">教员: [[${course.userName}]]</a>
+        </div>
+
+        <div class="footerInfo top">
+            <span th:each="student : ${studentList}" class="avaTop">
+                <a><img class="chat-avatar avatarAc" data-toggle="tooltip" data-placement="top" th:title="${student.studentName}"
+                        th:if="${student.avatar!=null && student.avatar!=''}" th:src="${student.avatar}" alt="">
+                    <img class="chat-avatar avatarAc" data-toggle="tooltip" data-placement="top" th:title="${student.studentName}"
+                         th:if="${student.avatar==null || student.avatar==''}" src="/img/111.png" alt="">
+                </a>
+            </span>
+            <a class="iconSpan">已选人数: [[${course.checkedSum}]] 人</a>
+            <a class="iconSpan">小组数: [[${course.groupSum}]] 个</a>
+        </div>
+
+        <div class="footerInfo top">
+            <a class="iconSpan" th:text="'开始时间：'+(*{#dates.format(course.startTime, 'yyyy-MM-dd')})"></a>
+            -<a class="iconSpan" th:text="'结束时间：'+(*{#dates.format(course.endTime, 'yyyy-MM-dd')})"></a>
+        </div>
+
+        <!--简介-->
+        <div class="articleDetail">
+            <B>简介：</B>
+            <div style="text-indent:2em">[(${course.introduction})]</div>
+        </div>
+
+        <!--文章正文-->
+        <div class="articleDetail">
+            <B>详情信息：</B>
+            <div style="text-indent:2em">[(${course.courseContent})]</div>
+        </div>
+
+
+    </div>
+
+    <form class="form-horizontal m" id="form-course-detail" th:object="${course}">
+        <input name="id" th:field="*{courseId}" type="hidden">
+    </form>
+</div>
+
+
+<!--模糊弹窗-->
+<div class="modal inmodal" id="myModal" tabindex="-1" role="dialog" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content animated bounceInRight">
+            <div class="modal-body">
+                <div class="form-group Tinfo">
+                    <div style="display: flex;justify-content: center">
+                        <img style="width:150px" th:src="${teacher.avatar}" alt="">
+                    </div>
+                    <div style="display: flex;justify-content: space-between;padding: 0 70px">
+                        <div>
+                            <div>
+                                <span>教员姓名：</span><span>[[${course.userName}]]</span>
+                            </div>
+                            <div>
+                                <span>性别：</span><span>[[${teacher.gender==0?'女':'男'}]]</span>
+                            </div>
+                            <div>
+                                <span>电话号码：</span><span>[[${teacher.phoneNumber}]]</span>
+                            </div>
+                            <div>
+                                <span>个人简介：</span><span>[[${teacher.biography}]]</span>
+                            </div>
+                        </div>
+                        <div>
+                            <div style="width: 140px">
+                                <span>毕业院校：</span><span>[[${teacher.graduateSchool}]]</span>
+                            </div>
+                            <div style="width: 140px">
+                                <span>专业方向：</span><span>[[${teacher.professional}]]</span>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<th:block th:include="include :: footer"/>
+<th:block th:include="include :: summernote-js"/>
+<th:block th:include="include :: datetimepicker-js"/>
+
+
+<script th:inline="javascript">
+    var prefix = ctx + "system/cu"
+
+    console.log([[${course}]])
+    console.log([[${teacher}]])
+    console.log([[${studentList}]])
+
+    $("#form-course-detail").validate({
+        focusCleanup: true
+    });
+
+    function submitHandler() {
+        $.modal.confirm("确定加入该课题吗?", function () {
+            $.operate.saveTab(prefix + "/cheked", $('#form-course-detail').serializeArray());
+        });
+    }
+
+
+    $("[data-toggle='tooltip']").tooltip();
+    $("[data-toggle=popover]").popover();
+
+
+
+</script>
+
+<style>
+
+    .Tinfo div {
+        margin-top: 5px;
+    }
+
+    .avatarAc {
+        border: 1px solid #797879;
+        border-radius: 18px;
+        float: none;
+        object-fit: cover;
+    }
+
+    .avaTop a{
+        margin-left: -13px;
+    }
+
+</style>
+</body>
+</html>

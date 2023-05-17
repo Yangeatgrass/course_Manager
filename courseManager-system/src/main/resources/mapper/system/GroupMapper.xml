@@ -1,0 +1,284 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.courseManager.system.mapper.GroupMapper">
+    <resultMap type="Group" id="GroupResult">
+        <result property="groupId" column="group_id"/>
+        <result property="courseId" column="course_id"/>
+        <result property="groupName" column="group_name"/>
+        <result property="groupManager" column="group_manager"/>
+        <result property="remark" column="remark"/>
+        <result property="status" column="status"/>
+        <result property="groupContent" column="group_content"/>
+        <result property="createBy" column="create_by"/>
+        <result property="createTime" column="create_time"/>
+        <result property="updateBy" column="update_by"/>
+        <result property="updateTime" column="update_time"/>
+        <result property="delFlag" column="del_flag"/>
+        <result property="courseName" column="course_name"/>
+        <result property="manageName" column="student_name"/>
+        <result property="userCount" column="user_count"/>
+    </resultMap>
+
+    <sql id="selectGroupVo">
+
+                select group_id, course_id, group_name, group_manager,
+                 remark, status, group_content, create_by, create_time,
+                  update_by, update_time, del_flag from `group`
+
+    </sql>
+
+    <select id="selectGroupList" parameterType="Group" resultMap="GroupResult">
+        SELECT
+        c.course_name,
+        s.student_name,
+        g.group_id,
+        g.course_id,
+        g.group_name,
+        g.group_manager,
+        g.remark,
+        g.STATUS,
+        g.group_content,
+        g.create_by,
+        g.create_time,
+        g.update_by,
+        g.update_time,
+        g.del_flag,
+        (
+        SELECT
+        COUNT( gu.student_id )
+        FROM
+        student s
+        LEFT JOIN group_user gu ON s.student_id = gu.student_id
+        WHERE
+        gu.group_id = g.group_id
+        AND s.del_flag = 0
+        ) user_count
+        FROM
+        `group` g LEFT JOIN course c on g.course_id=c.course_id
+        LEFT JOIN student s ON g.group_manager = s.student_id
+        LEFT JOIN group_user gu on g.group_id = gu.group_id
+        <where>
+            <if test="courseId != null">
+                g.course_id = #{courseId}
+            </if>
+            <if test="courseName != null and courseName != '' ">
+                and c.course_name like concat('%', #{courseName}, '%')
+            </if>
+            <if test="groupName != null  and groupName != ''">
+                and g.group_name like concat('%', #{groupName}, '%')
+            </if>
+            <if test="status != null ">
+                and g.status = #{status}
+            </if>
+            and g.del_flag = 0
+        </where>
+        GROUP BY g.group_id
+    </select>
+
+    <select id="selectGroupByGroupId" parameterType="Long" resultMap="GroupResult">
+        <include refid="selectGroupVo"/>
+        where group_id = #{groupId}
+    </select>
+
+    <insert id="insertGroup" parameterType="Group">
+        insert into `group`
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="groupId != null">
+                group_id,
+            </if>
+            <if test="courseId != null">
+                course_id,
+            </if>
+            <if test="groupName != null">
+                group_name,
+            </if>
+            <if test="groupManager != null">
+                group_manager,
+            </if>
+            <if test="remark != null">
+                remark,
+            </if>
+            <if test="status != null">
+                status,
+            </if>
+            <if test="groupContent != null">
+                group_content,
+            </if>
+            <if test="createBy != null">
+                create_by,
+            </if>
+            <if test="createTime != null">
+                create_time,
+            </if>
+            <if test="updateBy != null">
+                update_by,
+            </if>
+            <if test="updateTime != null">
+                update_time,
+            </if>
+            <if test="delFlag != null">
+                del_flag,
+            </if>
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="groupId != null">
+                #{groupId},
+            </if>
+            <if test="courseId != null">
+                #{courseId},
+            </if>
+            <if test="groupName != null">
+                #{groupName},
+            </if>
+            <if test="groupManager != null">
+                #{groupManager},
+            </if>
+            <if test="remark != null">
+                #{remark},
+            </if>
+            <if test="status != null">
+                #{status},
+            </if>
+            <if test="groupContent != null">
+                #{groupContent},
+            </if>
+            <if test="createBy != null">
+                #{createBy},
+            </if>
+            <if test="createTime != null">
+                #{createTime},
+            </if>
+            <if test="updateBy != null">
+                #{updateBy},
+            </if>
+            <if test="updateTime != null">
+                #{updateTime},
+            </if>
+            <if test="delFlag != null">
+                #{delFlag},
+            </if>
+        </trim>
+    </insert>
+
+    <update id="updateGroup" parameterType="Group">
+        update `group`
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="courseId != null">
+                course_id = #{courseId},
+            </if>
+            <if test="groupName != null">
+                group_name = #{groupName},
+            </if>
+            <if test="groupManager != null">
+                group_manager = #{groupManager},
+            </if>
+            <if test="remark != null">
+                remark = #{remark},
+            </if>
+            <if test="status != null">
+                status = #{status},
+            </if>
+            <if test="groupContent != null">
+                group_content = #{groupContent},
+            </if>
+            <if test="createBy != null">
+                create_by = #{createBy},
+            </if>
+            <if test="createTime != null">
+                create_time = #{createTime},
+            </if>
+            <if test="updateBy != null">
+                update_by = #{updateBy},
+            </if>
+            <if test="updateTime != null">
+                update_time = #{updateTime},
+            </if>
+            <if test="delFlag != null">
+                del_flag = #{delFlag},
+            </if>
+        </trim>
+        where group_id = #{groupId}
+    </update>
+
+    <delete id="deleteGroupByGroupId" parameterType="Long">
+
+                delete from `group` where group_id = #{groupId}
+
+    </delete>
+
+    <delete id="deleteGroupByGroupIds" parameterType="String">
+        update `group` set del_flag = 1 where group_id in
+        <foreach item="groupId" collection="array" open="(" separator="," close=")">
+            #{groupId}
+        </foreach>
+    </delete>
+
+    <!--校验小组名称唯一性-->
+    <select id="checkGroupNameUnique" resultMap="GroupResult">
+
+                SELECT
+                    group_name,
+                    group_id
+                FROM
+                    `group`
+                WHERE
+                    course_id = #{courseId}
+                    AND group_name = #{groupName}
+                    and del_flag = 0
+                    limit 1
+
+    </select>
+
+    <select id="selectGroupListByUserId" resultMap="GroupResult">
+        SELECT
+        DISTINCT g.*
+        FROM
+        group_user gu
+        LEFT JOIN sys_user u ON gu.student_id = u.user_id
+        LEFT JOIN `group` g on gu.group_id = g.group_id
+        WHERE
+        gu.group_id in (
+        SELECT
+        g.group_id
+        FROM
+        group_user gu
+        LEFT JOIN `group` g ON gu.group_id = g.group_id
+        LEFT JOIN course c ON c.course_id = g.course_id
+        WHERE
+        gu.student_id = #{userId}
+        AND g.course_id = #{group.courseId})
+        <if test="group.status != null ">
+            and g.status = #{group.status}
+        </if>
+        and g.del_flag = 0
+    </select>
+
+    <select id="checkEditGroupNameUnique" resultMap="GroupResult">
+
+                SELECT
+                    group_name,
+                    group_id
+                FROM
+                    `group`
+                WHERE
+                    course_id = #{courseId}
+                    AND group_name = #{groupName}
+                    and group_id != #{groupId}
+                    and del_flag = 0
+                    limit 1
+
+    </select>
+
+    <select id="selectGroupIdsListByCourseId" resultType="java.lang.Long">
+
+                SELECT
+                g.group_id
+                FROM
+                `group` g
+                WHERE
+                g.course_id = #{courseId}
+
+    </select>
+</mapper>

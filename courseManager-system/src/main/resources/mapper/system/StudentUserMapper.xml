@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.courseManager.system.mapper.StudentUserMapper">
+    
+    <resultMap type="StudentUser" id="StudentUserResult">
+        <result property="suId"    column="su_id"    />
+        <result property="studentId"    column="student_id"    />
+        <result property="userId"    column="user_id"    />
+    </resultMap>
+
+    <sql id="selectStudentUserVo">
+        select su_id, student_id, user_id from student_user
+    </sql>
+
+    <select id="selectStudentUserList" parameterType="StudentUser" resultMap="StudentUserResult">
+        <include refid="selectStudentUserVo"/>
+        <where>  
+            <if test="studentId != null "> and student_id = #{studentId}</if>
+            <if test="userId != null "> and user_id = #{userId}</if>
+        </where>
+    </select>
+    
+    <select id="selectStudentUserBySuId" parameterType="Long" resultMap="StudentUserResult">
+        <include refid="selectStudentUserVo"/>
+        where su_id = #{suId}
+    </select>
+        
+    <insert id="insertStudentUser" parameterType="StudentUser">
+        insert into student_user
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="suId != null">su_id,</if>
+            <if test="studentId != null">student_id,</if>
+            <if test="userId != null">user_id,</if>
+         </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="suId != null">#{suId},</if>
+            <if test="studentId != null">#{studentId},</if>
+            <if test="userId != null">#{userId},</if>
+         </trim>
+    </insert>
+
+    <update id="updateStudentUser" parameterType="StudentUser">
+        update student_user
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="studentId != null">student_id = #{studentId},</if>
+            <if test="userId != null">user_id = #{userId},</if>
+        </trim>
+        where su_id = #{suId}
+    </update>
+
+    <delete id="deleteStudentUserBySuId" parameterType="Long">
+        delete from student_user where su_id = #{suId}
+    </delete>
+
+    <delete id="deleteStudentUserBySuIds" parameterType="String">
+        delete from student_user where su_id in 
+        <foreach item="suId" collection="array" open="(" separator="," close=")">
+            #{suId}
+        </foreach>
+    </delete>
+
+    <delete id="deleteStudentUser">
+        delete from student_user where user_id in
+        <foreach collection="array" item="userId" open="(" separator="," close=")">
+            #{userId}
+        </foreach>
+    </delete>
+
+    <select id="getStudentIdByUserId" parameterType="java.lang.Long" resultType="java.lang.Long">
+        SELECT
+            student_id
+        FROM
+            student_user
+        WHERE
+            user_id = #{userId}
+    </select>
+
+    <!--根据学员id查询该学员的关联表id-->
+    <select id="getsuIdByStudentId" resultType="java.lang.Long">
+        SELECT
+            su_id
+        FROM
+            student_user
+        WHERE
+            student_id = #{studentId}
+    </select>
+</mapper>

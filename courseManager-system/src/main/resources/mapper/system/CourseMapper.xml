@@ -1,0 +1,641 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.courseManager.system.mapper.CourseMapper">
+    <resultMap type="Course" id="CourseResult">
+        <result property="courseId" column="course_id"/>
+        <result property="userId" column="user_id"/>
+        <result property="courseName" column="course_name"/>
+        <result property="introduction" column="introduction"/>
+        <result property="courseDate" column="course_date"/>
+        <result property="courseContent" column="course_content"/>
+        <result property="startTime" column="start_time"/>
+        <result property="endTime" column="end_time"/>
+        <result property="groupSum" column="groupSum"/>
+        <result property="status" column="status"/>
+        <result property="startNum" column="start_num"/>
+        <result property="createBy" column="create_by"/>
+        <result property="createTime" column="create_time"/>
+        <result property="updateBy" column="update_by"/>
+        <result property="updateTime" column="update_time"/>
+        <result property="delFlag" column="del_flag"/>
+        <result property="userName" column="user_name"/>
+        <result property="type" column="type"/>
+        <result property="checkedSum" column="checkedSum"/>
+        <result property="fileNoUnitSize" column="fileNoUnitSize"/>
+    </resultMap>
+
+
+    <sql id="selectCourseVo">
+
+
+
+                                                SELECT
+                                                    u.user_name,
+                                                    c.course_id,
+                                                    c.user_id,
+                                                    c.course_name,
+                                                    c.introduction,
+                                                    c.course_date,
+                                                    c.course_content,
+                                                    c.start_time,
+                                                    c.end_time,
+                                                    c.start_num,
+                                                    c.STATUS,
+                                                    c.create_by,
+                                                    c.create_time,
+                                                    c.update_by,
+                                                    c.update_time,
+                                                    c.del_flag
+                                                FROM
+                                                    course c
+                                                    LEFT JOIN sys_user u ON c.user_id = u.user_id
+
+
+
+    </sql>
+
+    <sql id="courseSqlBasic">
+
+                                SELECT
+                                    u.user_name,
+                                    c.course_id,
+                                    c.user_id,
+                                    c.course_name,
+                                    c.introduction,
+                                    c.course_date,
+                                    c.course_content,
+                                    c.start_time,
+                                    c.end_time,
+                                    c.start_num,
+                                    c.STATUS,
+                                    c.create_by,
+                                    c.create_time,
+                                    c.update_by,
+                                    c.update_time,
+                                    c.del_flag,
+                                    ( 	SELECT
+                                            COUNT(s.student_id)
+                                        FROM
+                                            student s LEFT JOIN course_user cu on s.student_id = cu.student_id
+                                        WHERE
+                                            s.del_flag = 0
+                                            and cu.course_id = c.course_id ) checkedSum,
+                                    ( SELECT count( 1 ) FROM `group` g WHERE g.course_id = c.course_id and g.del_flag = 0 and g.status=0 ) groupSum,
+                                    (
+                                        SELECT
+                                            SUM( file_nounit_size )
+                                        FROM
+                                            resource_file f
+                                            LEFT JOIN resource_course_file cf ON f.file_id = cf.file_id
+                                        WHERE
+                                            cf.course_id = c.course_id
+                                            and f.del_flag = 0
+                                        ORDER BY
+                                            create_time DESC
+                                    ) fileNoUnitSize
+                                FROM
+                                    course c
+                                    LEFT JOIN sys_user u ON c.user_id = u.user_id
+                                    LEFT JOIN course_user cu ON c.course_id = cu.course_id
+
+    </sql>
+
+    <select id="selectCourseList" parameterType="Course" resultMap="CourseResult">
+        <include refid="courseSqlBasic"/>
+        <where>
+            <if test="userName != null">
+                and u.user_name like concat('%', #{userName}, '%')
+            </if>
+            <if test="userId != null">
+                and c.user_id = #{userId}
+            </if>
+            <if test="courseName != null  and courseName != ''">
+                and c.course_name like concat('%', #{courseName}, '%')
+            </if>
+            <if test="introduction != null  and introduction != ''">
+                and c.introduction like concat('%', #{introduction},
+                '%')
+            </if>
+            <if test="courseDate != null  and courseDate != ''">
+                and c.course_date like concat('%', #{courseDate}, '%')
+            </if>
+            <if test="courseContent != null  and courseContent != ''">
+                and c.course_content like concat('%',
+                #{courseContent}, '%')
+            </if>
+            <if test="params.beginTime != null and params.beginTime != ''">
+                <!-- 开始时间检索 -->
+                AND date_format(c.create_time,'%y%m%d') &gt;= date_format(#{params.beginTime},'%y%m%d')
+            </if>
+            <if test="params.endTime != null and params.endTime != ''">
+                <!-- 结束时间检索 -->
+                AND date_format(c.create_time,'%y%m%d') &lt;= date_format(#{params.endTime},'%y%m%d')
+            </if>
+            <if test="startTime != null ">
+                and c.start_time = #{startTime}
+            </if>
+            <if test="endTime != null ">
+                and c.end_time = #{endTime}
+            </if>
+            <if test="status != null ">
+                and c.status = #{status}
+            </if>
+            <if test="params.NotStauts != null">
+                and c.status != #{params.NotStauts}
+            </if>
+            and c.del_flag = 0
+        </where>
+        GROUP BY course_id
+        ORDER BY
+        ( c.create_time ) DESC
+    </select>
+
+    <!--查询学员选课列表-->
+    <select id="selectCheckCourseList" parameterType="Course" resultMap="CourseResult">
+        SELECT
+        u.user_name,
+        c.course_id,
+        c.user_id,
+        c.course_name,
+        c.introduction,
+        c.course_date,
+        c.course_content,
+        c.start_time,
+        c.end_time,
+        c.start_num,
+        c.STATUS,
+        c.create_by,
+        c.create_time,
+        c.update_by,
+        c.update_time,
+        c.del_flag,
+        ( 	SELECT
+        COUNT(s.student_id)
+        FROM
+        student s LEFT JOIN course_user cu on s.student_id = cu.student_id
+        WHERE
+        s.del_flag = 0
+        and cu.course_id = c.course_id ) checkedSum
+        FROM
+        course c
+        LEFT JOIN sys_user u ON c.user_id = u.user_id
+        LEFT JOIN course_user cu on c.course_id = cu.course_id
+        <where>
+            <if test="userId != null">
+                and c.user_id = #{userId}
+            </if>
+            <if test="userName != null and userName != '' ">
+                and u.user_name like concat('%', #{userName}, '%')
+            </if>
+            <if test="courseName != null  and courseName != ''">
+                and c.course_name like concat('%', #{courseName}, '%')
+            </if>
+            <if test="introduction != null  and introduction != ''">
+                and c.introduction like concat('%', #{introduction},
+                '%')
+            </if>
+            <if test="courseDate != null  and courseDate != ''">
+                and c.course_date like concat('%', #{courseDate}, '%')
+            </if>
+            <if test="courseContent != null  and courseContent != ''">
+                and c.course_content like concat('%',
+                #{courseContent}, '%')
+            </if>
+            <if test="params.beginTime != null and params.beginTime != ''">
+                <!-- 开始时间检索 -->
+                AND date_format(c.create_time,'%y%m%d') &gt;= date_format(#{params.beginTime},'%y%m%d')
+            </if>
+            <if test="params.endTime != null and params.endTime != ''">
+                <!-- 结束时间检索 -->
+                AND date_format(c.create_time,'%y%m%d') &lt;= date_format(#{params.endTime},'%y%m%d')
+            </if>
+            <if test="startTime != null ">
+                and c.start_time = #{startTime}
+            </if>
+            <if test="endTime != null ">
+                and c.end_time = #{endTime}
+            </if>
+            and c.status != 0 and c.del_flag = 0
+        </where>
+        GROUP BY (course_id)
+    </select>
+
+    <!--查询当前学员已经选了的课题-->
+    <select id="selectCheckedCourse" resultMap="CourseResult">
+        SELECT
+        u.user_name,
+        c.course_id,
+        c.user_id,
+        c.course_name,
+        c.introduction,
+        c.course_date,
+        c.course_content,
+        c.start_time,
+        c.end_time,
+        c.start_num,
+        c.STATUS,
+        c.create_by,
+        c.create_time,
+        c.update_by,
+        c.update_time
+        FROM
+        course c
+        LEFT JOIN sys_user u ON c.user_id = u.user_id
+        LEFT JOIN course_user cu ON c.course_id = cu.course_id
+        <where>
+            and c.del_flag = 0 and cu.student_id = #{userId}
+            <if test="course.userName != null and course.userName != '' ">
+                and u.user_name like concat('%', #{course.userName}, '%')
+            </if>
+            <if test="course.courseName != null  and course.courseName != ''">
+                and c.course_name like concat('%', #{course.courseName}, '%')
+            </if>
+            <if test="course.introduction != null  and course.introduction != ''">
+                and c.introduction like concat('%', #{course.introduction},
+                '%')
+            </if>
+            <if test="course.courseDate != null  and course.courseDate != ''">
+                and c.course_date like concat('%', #{course.courseDate}, '%')
+            </if>
+            <if test="course.courseContent != null  and course.courseContent != ''">
+                and c.course_content like concat('%',
+                #{course.courseContent}, '%')
+            </if>
+            <if test="course.startTime != null ">
+                and c.start_time = #{course.startTime}
+            </if>
+            <if test="course.endTime != null ">
+                and c.end_time = #{course.endTime}
+            </if>
+        </where>
+    </select>
+
+    <select id="selectCourseByCourseId" parameterType="Long" resultMap="CourseResult">
+        <include refid="selectCourseVo"/>
+        where course_id = #{courseId}
+    </select>
+
+    <insert id="insertCourse" parameterType="Course">
+        insert into course
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="courseId != null">
+                course_id,
+            </if>
+            <if test="userId != null">
+                user_id,
+            </if>
+            <if test="courseName != null">
+                course_name,
+            </if>
+            <if test="introduction != null">
+                introduction,
+            </if>
+            <if test="courseDate != null">
+                course_date,
+            </if>
+            <if test="courseContent != null">
+                course_content,
+            </if>
+            <if test="startTime != null">
+                start_time,
+            </if>
+            <if test="endTime != null">
+                end_time,
+            </if>
+            <if test="status != null">
+                status,
+            </if>
+            <if test="startNum != null">
+                start_num,
+            </if>
+            <if test="createBy != null">
+                create_by,
+            </if>
+            <if test="createTime != null">
+                create_time,
+            </if>
+            <if test="updateBy != null">
+                update_by,
+            </if>
+            <if test="updateTime != null">
+                update_time,
+            </if>
+            <if test="delFlag != null">
+                del_flag,
+            </if>
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="courseId != null">
+                #{courseId},
+            </if>
+            <if test="userId != null">
+                #{userId},
+            </if>
+            <if test="courseName != null">
+                #{courseName},
+            </if>
+            <if test="introduction != null">
+                #{introduction},
+            </if>
+            <if test="courseDate != null">
+                #{courseDate},
+            </if>
+            <if test="courseContent != null">
+                #{courseContent},
+            </if>
+            <if test="startTime != null">
+                #{startTime},
+            </if>
+            <if test="endTime != null">
+                #{endTime},
+            </if>
+            <if test="status != null">
+                #{status},
+            </if>
+            <if test="startNum != null">
+                #{startNum},
+            </if>
+            <if test="createBy != null">
+                #{createBy},
+            </if>
+            <if test="createTime != null">
+                #{createTime},
+            </if>
+            <if test="updateBy != null">
+                #{updateBy},
+            </if>
+            <if test="updateTime != null">
+                #{updateTime},
+            </if>
+            <if test="delFlag != null">
+                #{delFlag},
+            </if>
+        </trim>
+    </insert>
+
+    <update id="updateCourse" parameterType="Course">
+        update course
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="userId != null">
+                user_id = #{userId},
+            </if>
+            <if test="courseName != null">
+                course_name = #{courseName},
+            </if>
+            <if test="introduction != null">
+                introduction = #{introduction},
+            </if>
+
+            <if test="courseDate != null">
+                course_date = #{courseDate},
+            </if>
+            <if test="courseContent != null">
+                course_content = #{courseContent},
+            </if>
+            <if test="startTime != null">
+                start_time = #{startTime},
+            </if>
+            <if test="endTime != null">
+                end_time = #{endTime},
+            </if>
+            <if test="status != null">
+                status = #{status},
+            </if>
+            <if test="startNum != null">
+                start_num = #{startNum},
+            </if>
+            <if test="createBy != null">
+                create_by = #{createBy},
+            </if>
+            <if test="createTime != null">
+                create_time = #{createTime},
+            </if>
+            <if test="updateBy != null">
+                update_by = #{updateBy},
+            </if>
+            <if test="updateTime != null">
+                update_time = #{updateTime},
+            </if>
+            <if test="delFlag != null">
+                del_flag = #{delFlag},
+            </if>
+        </trim>
+        where course_id = #{courseId}
+    </update>
+
+    <delete id="deleteCourseByCourseId" parameterType="Long">
+
+
+
+
+
+
+                                                        delete from course where course_id = #{courseId}
+
+
+
+
+
+
+    </delete>
+
+    <delete id="deleteCourseByCourseIds" parameterType="String">
+        update course set del_flag = 1 where course_id in
+        <foreach item="courseId" collection="array" open="(" separator="," close=")">
+            #{courseId}
+        </foreach>
+    </delete>
+
+    <!--根据教员id获取所创建的所有课题-->
+    <select id="selectCourseListByUserId" parameterType="Course" resultMap="CourseResult">
+        <include refid="courseSqlBasic"/>
+        <where>
+            <if test="userName != null and userName !=''">
+                and u.user_name like concat('%', #{userName}, '%')
+            </if>
+            <if test="courseName != null  and courseName != ''">
+                and c.course_name like concat('%', #{courseName}, '%')
+            </if>
+            <if test="introduction != null  and introduction != ''">
+                and c.introduction like concat('%', #{introduction},
+                '%')
+            </if>
+            <if test="courseDate != null  and courseDate != ''">
+                and c.course_date like concat('%', #{courseDate}, '%')
+            </if>
+            <if test="courseContent != null  and courseContent != ''">
+                and c.course_content like concat('%',
+                #{courseContent}, '%')
+            </if>
+            <if test="startTime != null ">
+                and c.start_time = #{startTime}
+            </if>
+            <if test="params.beginTime != null and params.beginTime != ''">
+                <!-- 开始时间检索 -->
+                AND date_format(c.create_time,'%y%m%d') &gt;= date_format(#{params.beginTime},'%y%m%d')
+            </if>
+            <if test="params.endTime != null and params.endTime != ''">
+                <!-- 结束时间检索 -->
+                AND date_format(c.create_time,'%y%m%d') &lt;= date_format(#{params.endTime},'%y%m%d')
+            </if>
+            <if test="endTime != null ">
+                and c.end_time = #{endTime}
+            </if>
+            <if test="status != null ">
+                and c.status = #{status}
+            </if>
+            <if test="userId != null ">
+                and c.user_id = #{userId}
+            </if>
+            and c.del_flag = 0
+        </where>
+        GROUP BY (course_id)
+    </select>
+
+    <!--获取发布状态的课题列表-->
+    <select id="selectCourseListWithNoStart" resultMap="CourseResult">
+        <include refid="courseSqlBasic"/>
+        <where>
+            <if test="userId != null">
+                and c.user_id = #{userId}
+            </if>
+            <if test="userName != null and userName != '' ">
+                and u.user_name like concat('%', #{userName}, '%')
+            </if>
+            <if test="courseName != null  and courseName != ''">
+                and c.course_name like concat('%', #{courseName}, '%')
+            </if>
+            <if test="introduction != null  and introduction != ''">
+                and c.introduction like concat('%', #{introduction},
+                '%')
+            </if>
+            <if test="courseDate != null  and courseDate != ''">
+                and c.course_date like concat('%', #{courseDate}, '%')
+            </if>
+            <if test="courseContent != null  and courseContent != ''">
+                and c.course_content like concat('%',
+                #{courseContent}, '%')
+            </if>
+            <if test="params.beginTime != null and params.beginTime != ''">
+                <!-- 开始时间检索 -->
+                AND date_format(c.create_time,'%y%m%d') &gt;= date_format(#{params.beginTime},'%y%m%d')
+            </if>
+            <if test="params.endTime != null and params.endTime != ''">
+                <!-- 结束时间检索 -->
+                AND date_format(c.create_time,'%y%m%d') &lt;= date_format(#{params.endTime},'%y%m%d')
+            </if>
+            <if test="startTime != null ">
+                and c.start_time = #{startTime}
+            </if>
+            <if test="endTime != null ">
+                and c.end_time = #{endTime}
+            </if>
+            <if test="status != null ">
+                and c.status = #{status}
+            </if>
+            and c.del_flag = 0
+        </where>
+        GROUP BY (course_id)
+    </select>
+
+    <!--获取正在进行的课题列表-->
+    <select id="selectCourseListWithConduct" resultMap="CourseResult">
+        <include refid="courseSqlBasic"/>
+
+        <where>
+            <if test="userId != null">
+                and c.user_id = #{userId}
+            </if>
+            <if test="userName != null and userName != '' ">
+                and u.user_name like concat('%', #{userName}, '%')
+            </if>
+            <if test="courseName != null  and courseName != ''">
+                and c.course_name like concat('%', #{courseName}, '%')
+            </if>
+            <if test="introduction != null  and introduction != ''">
+                and c.introduction like concat('%', #{introduction},
+                '%')
+            </if>
+            <if test="courseDate != null  and courseDate != ''">
+                and c.course_date like concat('%', #{courseDate}, '%')
+            </if>
+            <if test="courseContent != null  and courseContent != ''">
+                and c.course_content like concat('%',
+                #{courseContent}, '%')
+            </if>
+            <if test="params.beginTime != null and params.beginTime != ''">
+                <!-- 开始时间检索 -->
+                AND date_format(c.create_time,'%y%m%d') &gt;= date_format(#{params.beginTime},'%y%m%d')
+            </if>
+            <if test="params.endTime != null and params.endTime != ''">
+                <!-- 结束时间检索 -->
+                AND date_format(c.create_time,'%y%m%d') &lt;= date_format(#{params.endTime},'%y%m%d')
+            </if>
+            <if test="startTime != null ">
+                and c.start_time = #{startTime}
+            </if>
+            <if test="endTime != null ">
+                and c.end_time = #{endTime}
+            </if>
+            <if test="status != null and status != ''">
+                and c.`status` = #{status}
+            </if>
+            and c.del_flag = 0 and c.start_time <![CDATA[ <= ]]> NOW() and c.end_time <![CDATA[ > ]]> NOW()
+        </where>
+        GROUP BY course_id
+    </select>
+
+    <!--获取课题详情-->
+    <select id="getCourseDetails" resultMap="CourseResult">
+        <include refid="courseSqlBasic"/>
+        where c.course_id = #{courseId}
+        GROUP BY course_id
+    </select>
+
+    <!--获取所有课题(包括删除的课题)-->
+    <select id="selectCourseListAnyDelete" resultMap="CourseResult">
+        <include refid="courseSqlBasic"/>
+        <where>
+            <if test="userName != null">
+                and u.user_name like concat('%', #{userName}, '%')
+            </if>
+            <if test="userId != null">
+                and c.user_id = #{userId}
+            </if>
+            <if test="courseName != null  and courseName != ''">
+                and c.course_name like concat('%', #{courseName}, '%')
+            </if>
+            <if test="introduction != null  and introduction != ''">
+                and c.introduction like concat('%', #{introduction},
+                '%')
+            </if>
+            <if test="courseDate != null  and courseDate != ''">
+                and c.course_date like concat('%', #{courseDate}, '%')
+            </if>
+            <if test="courseContent != null  and courseContent != ''">
+                and c.course_content like concat('%',
+                #{courseContent}, '%')
+            </if>
+            <if test="params.beginTime != null and params.beginTime != ''">
+                <!-- 开始时间检索 -->
+                AND date_format(c.create_time,'%y%m%d') &gt;= date_format(#{params.beginTime},'%y%m%d')
+            </if>
+            <if test="params.endTime != null and params.endTime != ''">
+                <!-- 结束时间检索 -->
+                AND date_format(c.create_time,'%y%m%d') &lt;= date_format(#{params.endTime},'%y%m%d')
+            </if>
+            <if test="startTime != null ">
+                and c.start_time = #{startTime}
+            </if>
+            <if test="endTime != null ">
+                and c.end_time = #{endTime}
+            </if>
+            <if test="status != null ">
+                and c.status = #{status}
+            </if>
+        </where>
+        GROUP BY course_id
+    </select>
+</mapper>

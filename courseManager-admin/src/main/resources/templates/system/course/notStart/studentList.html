@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="zh" xmlns:th="http://www.thymeleaf.org" xmlns:shiro="http://www.pollix.at/thymeleaf/shiro">
+<head>
+    <th:block th:include="include :: header('学员列表')"/>
+    <th:block th:include="include :: bootstrap-duallistbox-css"/>
+</head>
+<body class="white-bg">
+<div class="wrapper wrapper-content animated fadeInRight ibox-content">
+
+    <div class="row">
+        <div class="col-sm-12 search-collapse">
+            <form id="formId">
+                <div class="select-list">
+                    <ul>
+                        <li>
+                            <label>学员姓名：</label>
+                            <input type="text" name="studentName"/>
+                        </li>
+                        <li>
+                            <label>学号：</label>
+                            <input type="text" name="sNumber"/>
+                        </li>
+                        <li>
+                            <label>性别：</label>
+                            <select name="gender" th:with="type=${@dict.getType('sys_gender')}">
+                                <option value="">所有</option>
+                                <option th:each="dict : ${type}" th:text="${dict.dictLabel}"
+                                        th:value="${dict.dictValue}"></option>
+                            </select>
+                        </li>
+                        <!--                        <li>-->
+                        <!--                            <label>电话号码：</label>-->
+                        <!--                            <input type="text" name="phonenumber"/>-->
+                        <!--                        </li>-->
+                        <li>
+                            <a class="btn btn-primary btn-rounded btn-sm" onclick="$.table.search()"><i
+                                    class="fa fa-search"></i>&nbsp;搜索</a>
+                            <a class="btn btn-warning btn-rounded btn-sm" onclick="$.form.reset()"><i
+                                    class="fa fa-refresh"></i>&nbsp;重置</a>
+                        </li>
+                    </ul>
+                </div>
+            </form>
+        </div>
+
+        <div class="btn-group-sm" id="toolbar" role="group">
+            <a class="btn btn-danger multiple disabled" onclick="removeStudents()"
+               shiro:hasPermission="system:course:edit">
+                <i class="fa fa-remove"></i> 移除
+            </a>
+            <a class="btn btn-success" onclick="invite()" shiro:hasPermission="system:course:edit">
+                <i class="fa fa-plus"></i> 邀请学员
+            </a>
+            <a class="btn btn-danger" onclick="closeItem()">
+                <i class="fa fa-reply-all"></i> 关闭
+            </a>
+        </div>
+        <div class="col-sm-12 select-table table-striped">
+            <table id="bootstrap-table"></table>
+        </div>
+    </div>
+</div>
+
+<th:block th:include="include :: footer"/>
+<th:block th:include="include :: bootstrap-duallistbox-js"/>
+
+
+<script th:inline="javascript">
+    var editFlag = [[${@permission.hasPermi('system:course:edit')}]];
+    var removeFlag = [[${@permission.hasPermi('system:course:remove')}]];
+
+    var statusDatas = [[${@dict.getType('sys_teacher_status')}]];
+    var gradeDatas = [[${@dict.getType('sys_student_grade')}]];
+    var sexDatas = [[${@dict.getType('sys_gender')}]];
+
+    var courseId = [[${courseId}]];
+
+    var prefix = ctx + "system/course"
+
+    $(function () {
+        var options = {
+            url: prefix + "/getStudentList/" + courseId,
+            createUrl: prefix + "/add/" + courseId,
+            updateUrl: prefix + "/edit/{id}",
+            removeUrl: prefix + "/remove",
+            exportUrl: prefix + "/export",
+            modalName: "学员列表",
+            columns: [{
+                checkbox: true
+            },
+                {
+                    field: 'studentId',
+                    title: '主键',
+                    visible: false
+                },
+                {
+                    field: 'studentName',
+                    title: '姓名'
+                },
+                {
+                    field: 'snumber',
+                    title: '学号'
+                },
+                {
+                    field: 'grade',
+                    title: '年级',
+                    align: "center",
+                    sortable: true,
+                    formatter: function (value, row, index) {
+                        return $.table.selectDictLabel(gradeDatas, value);
+                    }
+                },
+                {
+                    field: 'gender',
+                    title: '性别',
+                    formatter: function (value, row, index) {
+                        return $.table.selectDictLabel(sexDatas, value);
+                    }
+                },
+                {
+                    field: 'phoneNumber',
+                    title: '电话号码',
+                    align: 'center',
+                },
+                {
+                    title: '操作',
+                    align: 'center',
+                    formatter: function (value, row, index) {
+                        var actions = [];
+                        actions.push('<a class="btn btn-danger btn-xs ' + removeFlag + '" href="javascript:void(0)" onclick="removeStudent(' + row.studentId + ')"><i class="fa fa-remove"></i>移除</a> ');
+                        return actions.join('');
+                    }
+                }]
+        };
+        $.table.init(options);
+    });
+
+    function invite() {
+        var url = prefix + '/inviteStudent/' + courseId;
+        $.modal.open("邀请学员", url,1000);
+    }
+
+    //单移除学员
+    function removeStudent(uId) {
+        $.modal.confirm("确定移除该学员吗？", function () {
+            var data = {
+                "courseId":courseId,
+                "uIds":'',
+            };
+            data.uIds = uId;
+            console.log(data)
+            $.operate.submit(prefix + '/removeStudent', "post", "json", data);
+        });
+    }
+
+    //批量移除学员
+    function removeStudents(uId) {
+        table.set();
+        var rows = $.common.isEmpty(table.options.uniqueId) ? $.table.selectFirstColumns() : $.table.selectColumns(table.options.uniqueId);
+        if (rows.length == 0) {
+            $.modal.alertWarning("请至少选择一条数据");
+            return;
+        }
+        $.modal.confirm("确认要移除选中的" + rows.length + "位学员吗?", function() {
+            var data = {"courseId":courseId, "uIds": rows.join() };
+            console.log(data)
+            $.operate.submit(prefix + '/removeStudent', "post", "json", data);
+        });
+    }
+
+</script>
+</body>
+</html>

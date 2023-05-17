@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="zh" xmlns:th="http://www.thymeleaf.org" xmlns:shiro="http://www.pollix.at/thymeleaf/shiro">
+<head>
+    <th:block th:include="include :: header('未发布课题列表')"/>
+    <th:block th:include="include :: select2-css" />
+    <th:block th:include="include :: bootstrap-select-css" />
+</head>
+<body class="gray-bg">
+<div class="container-div">
+    <div class="row">
+        <div class="col-sm-12 search-collapse">
+            <form id="formId">
+                <div class="select-list">
+                    <ul>
+                        <li>
+                            <label>课题名称：</label>
+                            <input type="text" name="courseName"/>
+                        </li>
+
+                        <li>
+                            <a class="btn btn-primary btn-rounded btn-sm" onclick="$.table.search()"><i
+                                    class="fa fa-search"></i>&nbsp;搜索</a>
+                            <a class="btn btn-warning btn-rounded btn-sm" onclick="$.form.reset()"><i
+                                    class="fa fa-refresh"></i>&nbsp;重置</a>
+                        </li>
+                    </ul>
+                </div>
+            </form>
+        </div>
+
+        <div class="btn-group-sm" id="toolbar" role="group">
+            <a class="btn btn-success" onclick="$.operate.addTab()" shiro:hasPermission="system:course:add">
+                <i class="fa fa-plus"></i> 添加
+            </a>
+            <a class="btn btn-primary single disabled" onclick="$.operate.editTab()"
+               shiro:hasPermission="system:course:edit">
+                <i class="fa fa-edit"></i> 修改
+            </a>
+            <a class="btn btn-danger multiple disabled" onclick="$.operate.removeAll()"
+               shiro:hasPermission="system:course:remove">
+                <i class="fa fa-remove"></i> 删除
+            </a>
+
+        </div>
+        <div class="col-sm-12 select-table table-striped">
+            <table id="bootstrap-table"></table>
+        </div>
+    </div>
+</div>
+<th:block th:include="include :: footer"/>
+<th:block th:include="include :: select2-js" />
+<th:block th:include="include :: bootstrap-select-js" />
+
+<script th:inline="javascript">
+    var editFlag = [[${@permission.hasPermi('system:course:edit')}]];
+    var viewFlag = [[${@permission.hasPermi('system:course:view')}]];
+    var removeFlag = [[${@permission.hasPermi('system:course:remove')}]];
+    var statusDatas = [[${@dict.getType('sys_course_status')}]];
+    var prefix = ctx + "system/course";
+
+    $(function () {
+        var options = {
+            url: prefix + "/notPublishedList",
+            createUrl: prefix + "/add",
+            updateUrl: prefix + "/edit/{id}",
+            removeUrl: prefix + "/remove",
+            exportUrl: prefix + "/export",
+            modalName: "课题",
+            columns: [{
+                checkbox: true
+            },
+                {
+                    field: 'courseId',
+                    title: '课题主键',
+                    visible: false
+                },
+                {
+                    field: 'courseName',
+                    title: '课题名称',
+                    width: '300px',
+                    formatter: function (value, row, index) {
+                        return $.table.tooltip(value);
+                    }
+                },
+
+                {
+                    field: 'courseDate',
+                    title: '学期'
+                },
+
+                {
+                    field: 'userName',
+                    title: '教员'
+                },
+
+
+
+                {
+                    field: 'startNum',
+                    title: '计划人数',
+                    align: "center",
+                },
+                {
+                    field: 'startTime',
+                    title: '课题开始时间',
+                    formatter: function (value, row, index) {
+                        let now = new Date();
+                        let st = new Date(row.startTime)
+                        if(now > st){
+                            return '<span style="color: palevioletred">'+row.startTime+'</span>'
+                        }else{
+                            return row.startTime;
+                        }
+                    }
+                },
+                {
+                    field: 'endTime',
+                    title: '课题结束时间'
+                },
+                {
+                    field: 'status',
+                    title: '课题状态',
+                    formatter: function (value, row, index) {
+                        return $.table.selectDictLabel(statusDatas, value);
+                    }
+                },
+                {
+                    field: 'introduction',
+                    title: '课题简介',
+                    formatter: function(value, row, index) {
+                        return $.table.tooltip(value);
+                    }
+                },
+                {
+                    title: '操作',
+                    align: 'center',
+                    formatter: function (value, row, index) {
+                        var actions = [];
+                        actions.push('<a class="btn btn-success btn-xs ' + editFlag + '" href="javascript:void(0)" onclick="changeStatus(\'' + row.courseId + '\')"><i class="fa fa-send"></i>发布</a> ');
+                        actions.push('<a class="btn btn-success btn-xs ' + editFlag + '" href="javascript:void(0)" onclick="$.operate.editTab(\'' + row.courseId + '\')"><i class="fa fa-edit"></i>编辑</a> ');
+                        actions.push('<a class="btn btn-danger btn-xs ' + removeFlag + '" href="javascript:void(0)" onclick="$.operate.remove(\'' + row.courseId + '\')"><i class="fa fa-remove"></i>删除</a> ');
+                        return actions.join('');
+                    }
+                }]
+        };
+        $.table.init(options);
+    });
+
+    function changeStatus(courseId){
+        var data = {
+            "courseId":courseId,
+            "status":1
+        }
+        $.operate.post( prefix+"/edit",data)
+    }
+
+</script>
+</body>
+</html>

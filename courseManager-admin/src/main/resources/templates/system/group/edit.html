@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="zh" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <th:block th:include="include :: header('修改小组')"/>
+    <th:block th:include="include :: summernote-css"/>
+    <th:block th:include="include :: datetimepicker-css"/>
+    <th:block th:include="include :: select2-css"/>
+</head>
+<body class="white-bg">
+<div class="wrapper wrapper-content animated fadeInRight ibox-content">
+    <form class="form-horizontal m" id="form-group-edit" th:object="${group}">
+        <input name="groupId" th:field="*{groupId}" type="hidden">
+        <input name="courseId" th:field="*{courseId}" type="hidden">
+
+        <div class="col-sm-12">
+            <div class="col-sm-6">
+                <div class="form-group">
+                    <label class="col-sm-3 control-label is-required">小组名称：</label>
+                    <div class="col-sm-8">
+                        <input name="groupName" th:field="*{groupName}" class="form-control" type="text">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="col-sm-3 control-label">备注：</label>
+                    <div class="col-sm-8">
+                        <input name="remark" th:field="*{remark}" class="form-control" type="text">
+                    </div>
+                </div>
+            </div>
+            <div class="col-sm-6">
+                <div class="form-group">
+                    <label class="col-sm-3 control-label">课题状态：</label>
+                    <div class="col-sm-8">
+                        <select name="status" class="form-control m-b"
+                                th:with="type=${@dict.getType('sys_teacher_status')}">
+                            <option th:each="dict : ${type}" th:text="${dict.dictLabel}" th:value="${dict.dictValue}"
+                                    th:field="*{status}"></option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+        <div class="col-sm-12">
+            <div class="col-sm-6">
+                <div class="form-group">
+                    <label class="col-sm-3 control-label">小组介绍：</label>
+                    <div class="col-sm-8">
+                        <input type="hidden" class="form-control" th:field="*{groupContent}">
+                        <div class="summernote" id="groupContent"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </form>
+</div>
+<th:block th:include="include :: footer"/>
+<th:block th:include="include :: summernote-js"/>
+<th:block th:include="include :: datetimepicker-js"/>
+<th:block th:include="include :: select2-js"/>
+<script th:inline="javascript">
+    var prefix = ctx + "system/group";
+
+    $("#form-group-edit").validate({
+        onkeyup: false,
+        rules: {
+            courseId: {required: true},
+            groupName: {
+                minlength: 2,
+                maxlength: 20,
+                required: true,
+                remote: {
+                    url: prefix + "/checkGroupNameUnique",
+                    type: "post",
+                    dataType: "json",
+                    data: {
+                        "courseId": function () {
+                            return $.common.trim($("#courseId").val());
+                        },
+                        "groupName": function () {
+                            return $.common.trim($("#groupName").val());
+                        },
+                        "groupId": function () {
+                            return $("#groupId").val();
+                        }
+                    }
+                }
+            }
+        },
+        messages: {
+            "groupName": {
+                required: "请输入小组名称",
+                remote: "该小组名称已存在"
+            },
+        },
+        focusCleanup: true
+    });
+
+    function submitHandler() {
+        if ($.validate.form()) {
+            $.operate.save(prefix + "/edit", $('#form-group-edit').serialize());
+        }
+    }
+
+    $(function () {
+        $('.summernote').each(function (i) {
+            $('#' + this.id).summernote({
+                lang: 'zh-CN',
+                dialogsInBody: true,
+                height: 200,
+                width: 885,
+                callbacks: {
+                    onChange: function (contents, $edittable) {
+                        $("input[name='" + this.id + "']").val(contents);
+                    },
+                    onImageUpload: function (files) {
+                        var obj = this;
+                        var data = new FormData();
+                        data.append("file", files[0]);
+                        $.ajax({
+                            type: "post",
+                            url: ctx + "common/upload",
+                            data: data,
+                            cache: false,
+                            contentType: false,
+                            processData: false,
+                            dataType: 'json',
+                            success: function (result) {
+                                if (result.code == web_status.SUCCESS) {
+                                    $('#' + obj.id).summernote('insertImage', result.url);
+                                } else {
+                                    $.modal.alertError(result.msg);
+                                }
+                            },
+                            error: function (error) {
+                                $.modal.alertWarning("图片上传失败。");
+                            }
+                        });
+                    }
+                }
+            });
+            var content = $("input[name='" + this.id + "']").val();
+            $('#' + this.id).summernote('code', content);
+        })
+    });
+</script>
+</body>
+</html>

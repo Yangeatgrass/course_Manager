@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="zh" xmlns:th="http://www.thymeleaf.org" xmlns:shiro="http://www.pollix.at/thymeleaf/shiro">
+<head>
+    <th:block th:include="include :: header('正在进行的课题列表')"/>
+    <th:block th:include="include :: select2-css" />
+    <th:block th:include="include :: bootstrap-select-css" />
+    <th:block th:include="include :: bootstrap-fileinput-css" />
+
+</head>
+<body class="gray-bg">
+<div class="container-div">
+    <form class="form-horizontal m" id="form-recourse-add">
+        <div class="col-sm-12">
+            <div class="ibox float-e-margins">
+                <div class="ibox-title">
+                    <h5>文件上传</h5>
+                </div>
+                <div class="ibox-content">
+                    <div class="form-group">
+                        <div class="file-loading">
+                            <input id="multipleFile" name="files" type="file" multiple>
+                        </div>
+                    </div>
+                    <hr>
+                </div>
+            </div>
+        </div>
+    </form>
+</div>
+
+<th:block th:include="include :: footer"/>
+<th:block th:include="include :: select2-js" />
+<th:block th:include="include :: bootstrap-select-js" />
+<th:block th:include="include :: bootstrap-fileinput-js" />
+
+
+<script th:inline="javascript">
+
+    var prefix = ctx + "system/resource/";
+    var datas = [];
+
+
+    function submitHandler() {
+        console.log(datas)
+        if(datas.length==0){
+            $.modal.msgError("请先上传文件!")
+            return;
+        }
+        var formInfo = $('#form-recourse-add').serializeArray();
+        var length = datas.MD5Flags.length; //文件的数量与其中的属性数量一致，所以随便拿一个属性的长度。
+        for (let i = 0; i <length; i++) {
+            formInfo = $('#form-recourse-add').serializeArray(); //重置值
+            formInfo.push({"name":"fileName","value":datas.originalFilenames[i]})
+            formInfo.push({"name":"identifier","value":datas.MD5Flags[i]})
+            formInfo.push({"name":"fileType","value":datas.fileTypes[i]})
+            formInfo.push({"name":"filePath","value":datas.urls[i]})
+            formInfo.push({"name":"fileSize","value":datas.fileSizes[i]})
+            formInfo.push({"name":"fileNounitSize","value":datas.fileSizesNoUnit[i]})
+            console.log(formInfo)
+            $.operate.save(prefix + "/savePublishFile", formInfo);
+        }
+    }
+
+    $(document).ready(function () {
+        // 多文件上传
+        $("#multipleFile").fileinput({
+            uploadUrl: ctx + 'common/ResourceUploadFiles',
+            uploadAsync: false,
+            showCancel:false,
+            previewFileIcon:"<i class='glyphicon glyphicon-file'></i>",
+            layoutTemplates:{
+                actionUpload:''//去除上传预览缩略图中的上传图片
+            },
+        }).on('filebatchuploadsuccess', function (event, data, previewId, index) {
+            var rsp = data.response;
+            console.log(rsp)
+            if(rsp.code==500){
+                $.modal.alertError(rsp.msg);
+                $(".fileinput-remove-button").click();
+                return ;
+            }
+            datas = rsp;
+            // log.info("return urls：" + rsp.urls)
+            // log.info("reutrn fileNames：" + rsp.fileNames)
+            // log.info("reutrn newFileNames：" + rsp.newFileNames)
+            // log.info("return originalFilenames：" + rsp.originalFilenames)
+            // log.info("return fileTypes：" + rsp.fileTypes)
+            // log.info("return MD5Flags：" + rsp.MD5Flags)
+            // log.info("return fileSizes：" + rsp.fileSizes)
+            submitHandler();
+        }).on('fileremoved', function (event, id, index) {
+            console.log($("input[name='" + event.currentTarget.id + "']").val(''))
+        }).on('filebatchuploaderror',function (event,data,msg){
+            //上传失败
+            console.log(msg)
+            $.modal.alertError(msg)
+        })
+
+    });
+</script>
+</body>
+</html>

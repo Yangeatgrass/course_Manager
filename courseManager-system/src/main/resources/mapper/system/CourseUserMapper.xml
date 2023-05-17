@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.courseManager.system.mapper.CourseUserMapper">
+    
+    <resultMap type="CourseUser" id="CourseUserResult">
+        <result property="cuId"    column="cu_id"    />
+        <result property="courseId"    column="course_id"    />
+        <result property="studentId"    column="student_id"    />
+    </resultMap>
+
+    <sql id="selectCourseUserVo">
+        select cu_id, course_id, student_id from course_user
+    </sql>
+
+    <select id="selectCourseUserList" parameterType="CourseUser" resultMap="CourseUserResult">
+        <include refid="selectCourseUserVo"/>
+        <where>  
+            <if test="courseId != null "> and course_id = #{courseId}</if>
+            <if test="studentId != null "> and student_id = #{studentId}</if>
+        </where>
+    </select>
+    
+    <select id="selectCourseUserByCuId" parameterType="Long" resultMap="CourseUserResult">
+        <include refid="selectCourseUserVo"/>
+        where cu_id = #{cuId}
+    </select>
+        
+    <insert id="insertCourseUser" parameterType="CourseUser">
+        insert into course_user
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="cuId != null">cu_id,</if>
+            <if test="courseId != null">course_id,</if>
+            <if test="studentId != null">student_id,</if>
+         </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="cuId != null">#{cuId},</if>
+            <if test="courseId != null">#{courseId},</if>
+            <if test="studentId != null">#{studentId},</if>
+         </trim>
+    </insert>
+
+    <update id="updateCourseUser" parameterType="CourseUser">
+        update course_user
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="courseId != null">course_id = #{courseId},</if>
+            <if test="studentId != null">student_id = #{studentId},</if>
+        </trim>
+        where cu_id = #{cuId}
+    </update>
+
+    <delete id="deleteCourseUserByCuId" parameterType="Long">
+        delete from course_user where cu_id = #{cuId}
+    </delete>
+
+    <delete id="deleteCourseUserByCuIds" parameterType="String">
+        delete from course_user where cu_id in 
+        <foreach item="cuId" collection="array" open="(" separator="," close=")">
+            #{cuId}
+        </foreach>
+    </delete>
+
+    <!--批量保存用户与课题关联-->
+    <insert id="insertCourseUserBatchList">
+        insert into course_user(course_id,student_id) values
+        <foreach item="cu" collection="list" separator=",">
+        (#{cu.courseId},#{cu.userId})
+        </foreach>
+    </insert>
+
+    <!--批量保存用户与课题关联-->
+    <insert id="insertCourseUserBatch">
+        insert into course_user(course_id,student_id) values
+        <foreach item="uId" collection="userIds" separator=",">
+            (#{courseId},#{uId})
+        </foreach>
+    </insert>
+
+    <!--批量删除用户与课题关联-->
+    <delete id="deleteCourseUserByuIds">
+        delete from course_user where course_id = #{courseId} and student_id in
+        <foreach item="uid" collection="uIds" open="(" separator="," close=")">
+            #{uid}
+        </foreach>
+    </delete>
+</mapper>

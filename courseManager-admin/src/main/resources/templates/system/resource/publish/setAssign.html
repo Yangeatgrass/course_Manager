@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="zh" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <th:block th:include="include :: header('用户')"/>
+</head>
+
+<body class="gray-bg">
+<div class="container-div">
+    <div class="row">
+<!--        <div class="col-sm-12 search-collapse">-->
+<!--            <form id="role-form">-->
+<!--                <input type="hidden" id="fId" name="fileId" th:value="*{fId}">-->
+<!--                <div class="select-list">-->
+<!--                    <ul>-->
+<!--                        <li>-->
+<!--                            登录名：<input type="text" name="loginName"/>-->
+<!--                        </li>-->
+<!--                        <li>-->
+<!--                            手机号码：<input type="text" name="phonenumber"/>-->
+<!--                        </li>-->
+<!--                        <li>-->
+<!--                            <a class="btn btn-primary btn-rounded btn-sm" onclick="$.table.search()"><i-->
+<!--                                    class="fa fa-search"></i>&nbsp;搜索</a>-->
+<!--                            <a class="btn btn-warning btn-rounded btn-sm" onclick="$.form.reset()"><i-->
+<!--                                    class="fa fa-refresh"></i>&nbsp;重置</a>-->
+<!--                        </li>-->
+<!--                    </ul>-->
+<!--                </div>-->
+<!--            </form>-->
+<!--        </div>-->
+
+        <div class="col-sm-12 select-table table-striped">
+            <table id="bootstrap-table"></table>
+        </div>
+    </div>
+</div>
+<th:block th:include="include :: footer"/>
+<script th:inline="javascript">
+
+    var fId = [[${fId}]];
+    var visible = [[${visible}]];
+    var users = [[${users}]]
+    console.log(users)
+
+    var prefix = ctx + "system/resource";
+
+    var overAllIds = new Array();  //全局数组
+
+
+    $(function () {
+        var options = {
+            // url: prefix + "/getAssignedStudents/" + fId,
+            data:users,
+            showSearch: false,
+            showRefresh: false,
+            showToggle: false,
+            showColumns: false,
+            clickToSelect: true,
+            rememberSelected: true,
+            maintainSelected: true,
+            pagination:false,
+            columns: [{
+                field: 'state',
+                checkbox: true,
+                formatter: function (value, row, index) {
+                    if (value) {
+                        return value;
+                    } else {
+                        if (row.assingFlag == 0) {
+                            return {checked: false};
+                        } else {
+                            return {checked: true};
+                        }
+                    }
+                }
+            },
+                {
+                    field: 'userId',
+                    title: '用户编号',
+                    visible: false,
+                },
+                {
+                    field: 'loginName',
+                    title: '登录名称',
+                },
+                {
+                    field: 'userName',
+                    title: '用户名称'
+                },
+
+                {
+                    field: 'phonenumber',
+                    title: '手机'
+                },
+                {
+                    field: 'createTime',
+                    title: '创建时间',
+                }]
+        };
+
+
+        $.table.init(options);
+
+    });
+
+
+
+    function submitHandler() {
+
+
+        var uIds = [];
+        var dataForm = $('#bootstrap-table').bootstrapTable('getSelections');
+
+
+        for (var i = 0; i < dataForm.length; i++) {
+            uIds.push(dataForm[i].userId)
+        }
+
+        if (uIds.length <= 0) {
+            $.modal.alertWarning("请至少选择一位用户");
+            return;
+        }
+
+
+        var data = {"fileId": fId, "uIds": uIds.join()};
+        $.operate.save(prefix + "/saveAssignUser", data);
+    }
+</script>
+</body>
+</html>

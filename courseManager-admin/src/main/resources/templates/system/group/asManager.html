@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="zh" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <th:block th:include="include :: header('组长设置')"/>
+    <th:block th:include="include :: bootstrap-duallistbox-css"/>
+    <th:block th:include="include :: select2-css"/>
+</head>
+<body class="white-bg">
+<div class="wrapper wrapper-content animated fadeInRight ibox-content">
+    <form class="form-horizontal m" id="form-manager-edit">
+        <div style="display: flex;flex-flow: wrap;width: 100%;margin-top: 20px">
+            <div class="form-group">
+                <label class="col-sm-12 control-label">当前组长：</label>
+                <div class="col-sm-8">
+                    <select id="managerId" name="status" class="form-control m-b">
+                        <option value="-1">--暂不设置--</option>
+                        <option th:each="user:${users}" th:text="${user.studentName}+'('+${user.sNumber}+')'"
+                                th:value="${user.studentId}" th:selected="(${user.studentId}==${group.groupManager})"></option>
+                    </select>
+                </div>
+            </div>
+        </div>
+    </form>
+</div>
+
+<div class="row">
+    <div class="col-sm-offset-5 col-sm-10" style="margin-left:35%;margin-top: 2%">
+        <button type="button" class="btn btn-sm btn-primary" onclick="submitHandler()"><i class="fa fa-check"></i>确 定
+        </button>&nbsp;
+        <button type="button" class="btn btn-sm btn-danger" onclick="$.modal.close()"><i class="fa fa-reply-all"></i>关 闭
+        </button>
+    </div>
+</div>
+
+
+<th:block th:include="include :: footer"/>
+<th:block th:include="include :: bootstrap-duallistbox-js"/>
+<th:block th:include="include :: select2-js"/>
+
+
+<script th:inline="javascript">
+    var prefix = ctx + "system/group"
+
+    var groupId = [[${groupId}]]
+
+    //保存
+    function submitHandler() {
+            var data = $('#form-manager-edit').serializeArray();
+            //获取学员id
+            var sId = $("#managerId").val();
+            data.push({"name": "groupId", "value": groupId});
+            data.push({"name": "sId", "value": sId});
+            $.operate.save(prefix + "/savaGroupManager", data);
+    }
+
+
+</script>
+</body>
+</html>

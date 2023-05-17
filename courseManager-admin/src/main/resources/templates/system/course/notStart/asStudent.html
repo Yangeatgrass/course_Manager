@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="zh" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <th:block th:include="include :: header('分配学员')"/>
+    <th:block th:include="include :: bootstrap-duallistbox-css"/>
+
+</head>
+<body class="white-bg">
+<div class="wrapper wrapper-content animated fadeInRight ibox-content">
+    <form class="form-horizontal m" id="form-course-add">
+        <div style="display: flex;flex-flow: wrap;width: 100%;margin-top: 20px">
+            <div style="width: 100%;">
+                <div class="ibox-content">
+                    <form id="form" action="#" class="wizard-big">
+                        <select id="selectI" name="selectI" class="form-control dual_select" multiple >
+                            <option th:each="user:${notInUsers}" th:value="${user.studentId}"
+                                    th:text="${user.studentName}+'('+${user.sNumber}+')'" onclick="getStudents()"></option>
+
+                            <option th:each="user:${users}" th:value="${user.studentId}" th:if="!${ManagerFlag}"
+                                    th:text="${user.studentName}+'('+${user.sNumber}+')'" th:disabled="(${user.studentId}==${groupManager})" selected onclick="getStudents()"></option>
+
+                            <option th:each="user:${users}" th:value="${user.studentId}" th:if="${ManagerFlag}"
+                                    th:text="${user.studentName}+'('+${user.sNumber}+')'" selected onclick="getStudents()"></option>
+                        </select>
+                    </form>
+                    <hr>
+                </div>
+            </div>
+<!--            <div style="width: 40%;">-->
+<!--                <div class="form-group">-->
+<!--                    <label class="col-sm-4 control-label">组长设置：</label>-->
+<!--                    <div class="col-sm-6">-->
+<!--                        <select id="managerId" name="status" class="form-control m-b" >-->
+<!--                            <option value="-1">&#45;&#45;暂不设置&#45;&#45;</option>-->
+<!--                        </select>-->
+<!--                    </div>-->
+<!--                </div>-->
+<!--            </div>-->
+        </div>
+    </form>
+</div>
+
+<div class="row">
+    <div class="col-sm-offset-5 col-sm-10" style="margin-left:43.5%;margin-top: 2%">
+        <button type="button" class="btn btn-sm btn-primary" onclick="submitHandler()"><i class="fa fa-check"></i>保
+            存
+        </button>&nbsp;
+        <button type="button" class="btn btn-sm btn-danger" onclick="$.modal.close()"><i class="fa fa-reply-all"></i>关 闭
+        </button>
+    </div>
+</div>
+
+
+<th:block th:include="include :: footer"/>
+<th:block th:include="include :: bootstrap-duallistbox-js"/>
+
+
+<script th:inline="javascript">
+    var prefix = ctx + "system/group"
+
+    var groupId = [[${groupId}]]
+
+    //保存
+    function submitHandler() {
+        if ($.validate.form()) {
+            var data = $('#form-course-add').serializeArray();
+            //获取学员ids
+            var sIds = $.form.selectSelects("selectI");
+
+            data.push({"name": "gId", "value": groupId});
+            data.push({"name": "sIds", "value": sIds});
+            $.operate.save(prefix + "/savaGroupStudent", data);
+        }
+    }
+
+    $(document).on("click", ".remove", function(){
+        getStudents()
+    });
+
+    $(document).on("click", ".removeall", function(){
+        getStudents()
+    });
+
+    $(document).on("click", ".move", function(){
+        getStudents()
+    });
+    $(document).on("click", ".moveall", function(){
+        getStudents()
+    });
+
+    $(document).on("click", ".moveall", function(){
+        getStudents()
+    });
+
+
+
+    //动态获取已选中的学员，用来设置组长
+    function getStudents(){
+        //清空选项
+        // $("#managerId").empty()
+        // $("#managerId").append('<option value="-1">--暂不设置--</option>')
+        //
+        // var options=$("#selectI").find("option:selected"); //获取选中的项
+        // console.log(options)
+        // var arr = [];
+        // for (let i = 0; i < options.length; i++) {
+        //     arr.push({"sId":options[i].value,"sName":options[i].text});
+        //     $("#managerId").append('<option value="'+options[i].value+'" >'+options[i].text+'</option>')
+        // }
+        // console.log(arr)
+        console.log(selectorx.val())
+    }
+
+    $(function (){
+        getStudents();
+    })
+
+    var selectorx = $('.dual_select').bootstrapDualListbox({
+        bootstrap3Compatible: true,
+        nonSelectedListLabel: '未分配学员',
+        selectedListLabel: '已分配学员',
+        preserveSelectionOnMove: 'moved',
+        moveOnSelect: false,           // 出现一个剪头，表示可以一次选择一个
+        filterTextClear: '展示所有',
+        moveSelectedLabel: "添加",
+        moveAllLabel: '添加所有',
+        removeSelectedLabel: "移除",
+        removeAllLabel: '移除所有',
+        infoText: '共{0}个',
+        showFilterInputs: true,       // 是否带搜索
+        selectorMinimalHeight: 160,
+        infoTextEmpty: '列表为空',
+    })
+
+
+</script>
+</body>
+</html>

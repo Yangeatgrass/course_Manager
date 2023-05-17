@@ -1,0 +1,550 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.courseManager.system.mapper.SysUserMapper">
+
+	<resultMap type="SysUser" id="SysUserResult">
+		<id     property="userId"        column="user_id"         />
+		<result property="deptId"        column="dept_id"         />
+		<result property="loginName"     column="login_name"      />
+		<result property="userName"      column="user_name"       />
+		<result property="userType"      column="user_type"       />
+		<result property="email"         column="email"           />
+		<result property="phonenumber"   column="phonenumber"     />
+		<result property="sex"           column="sex"             />
+		<result property="avatar"        column="avatar"          />
+		<result property="password"      column="password"        />
+		<result property="salt"          column="salt"            />
+		<result property="status"        column="status"          />
+		<result property="delFlag"       column="del_flag"        />
+		<result property="loginIp"       column="login_ip"        />
+		<result property="loginDate"     column="login_date"      />
+		<result property="pwdUpdateDate" column="pwd_update_date" />
+		<result property="createBy"      column="create_by"       />
+		<result property="createTime"    column="create_time"     />
+		<result property="updateBy"      column="update_by"       />
+		<result property="updateTime"    column="update_time"     />
+		<result property="remark"        column="remark"          />
+		<result property="identityFlag"        column="identityFlag"          />
+		<result property="assingFlag"        column="assingFlag"          /> <!--标识用户拥有文件权限标识-->
+		<association property="dept"     column="dept_id" javaType="SysDept" resultMap="deptResult" />
+		<collection  property="roles"   javaType="java.util.List"        resultMap="RoleResult" />
+	</resultMap>
+	
+	<resultMap id="deptResult" type="SysDept">
+		<id     property="deptId"    column="dept_id"     />
+		<result property="parentId"  column="parent_id"   />
+		<result property="deptName"  column="dept_name"   />
+		<result property="ancestors" column="ancestors"   />
+		<result property="orderNum"  column="order_num"   />
+		<result property="leader"    column="leader"      />
+		<result property="status"    column="dept_status" />
+	</resultMap>
+	
+	<resultMap id="RoleResult" type="SysRole">
+		<id     property="roleId"       column="role_id"        />
+		<result property="roleName"     column="role_name"      />
+		<result property="roleKey"      column="role_key"       />
+		<result property="roleSort"     column="role_sort"      />
+		<result property="dataScope"    column="data_scope"     />
+		<result property="status"       column="role_status"    />
+	</resultMap>
+
+	<!--根据课题id获取选该课题的所有用户-->
+	<select id="getUserIdByCourseId" resultMap="SysUserResult">
+        SELECT
+            u.user_id,
+            u.user_name,
+            u.login_name,
+            u.sex,
+            u.phonenumber,
+            u.create_time,
+			u.create_by
+        FROM
+            course_user cu
+            LEFT JOIN sys_user u ON cu.student_id = u.user_id
+            LEFT JOIN course c ON c.course_id = cu.course_id
+        WHERE
+			u.del_flag = 0
+			AND c.course_id = #{courseId}
+			<if test="sysUser.userId != null and sysUser.userId != 0">
+				AND u.user_id = #{sysUser.userId}
+			</if>
+			<if test="sysUser.loginName != null and sysUser.loginName != ''">
+				AND u.login_name like concat('%', #{sysUser.loginName}, '%')
+			</if>
+			<if test="sysUser.userName != null and sysUser.userName != ''">
+				AND u.user_name like concat('%', #{sysUser.userName}, '%')
+			</if>
+			<if test="sysUser.sex != null and sysUser.sex != ''">
+				AND u.sex = #{sysUser.sex}
+			</if>
+			<if test="sysUser.status != null and sysUser.status != ''">
+				AND u.status = #{sysUser.status}
+			</if>
+			<if test="sysUser.phonenumber != null and sysUser.phonenumber != ''">
+				AND u.phonenumber like concat('%', #{sysUser.phonenumber}, '%')
+			</if>
+			<if test="sysUser.deptId != null and sysUser.deptId != 0">
+				AND (u.dept_id = #{sysUser.deptId} OR u.dept_id IN ( SELECT t.dept_id FROM sys_dept t WHERE FIND_IN_SET (#{sysUser.deptId},ancestors) ))
+			</if>
+
+    </select>
+
+	<!--根据课题id查询没有加入该课题的学员-->
+	<select id="studentListByInvite" resultMap="SysUserResult">
+		SELECT
+			u.user_id,
+            u.user_name,
+            u.login_name,
+            u.sex,
+            u.phonenumber,
+            u.create_time,
+			u.create_by
+		FROM
+			sys_user u
+			JOIN student_user su ON u.user_id = su.user_id
+		WHERE
+			u.user_id NOT IN (
+			SELECT
+				cu.student_id
+			FROM
+				sys_user u
+				LEFT JOIN course_user cu ON u.user_id = cu.student_id
+				LEFT JOIN course c ON c.course_id = cu.course_id
+		WHERE
+			cu.course_id = #{courseId})
+
+		and	u.del_flag = 0
+		<if test="sysUser.userId != null and sysUser.userId != 0">
+			AND u.user_id = #{sysUser.userId}
+		</if>
+		<if test="sysUser.loginName != null and sysUser.loginName != ''">
+			AND u.login_name like concat('%', #{sysUser.loginName}, '%')
+		</if>
+		<if test="sysUser.sex != null and sysUser.sex != ''">
+			AND u.sex = #{sysUser.sex}
+		</if>
+		<if test="sysUser.status != null and sysUser.status != ''">
+			AND u.status = #{sysUser.status}
+		</if>
+		<if test="sysUser.phonenumber != null and sysUser.phonenumber != ''">
+			AND u.phonenumber like concat('%', #{sysUser.phonenumber}, '%')
+		</if>
+		<if test="sysUser.deptId != null and sysUser.deptId != 0">
+			AND (u.dept_id = #{sysUser.deptId} OR u.dept_id IN ( SELECT t.dept_id FROM sys_dept t WHERE FIND_IN_SET (#{sysUser.deptId},ancestors) ))
+		</if>
+	</select>
+
+	<!--查询拥有教员身份的用户 已移除-->
+	<select id="getUserWithTc" resultMap="SysUserResult">
+	SELECT
+		u.user_id,
+		u.login_name,
+		u.user_name,
+		u.user_type,
+		u.email,
+		u.avatar,
+		u.phonenumber,
+		u.sex,
+		u.STATUS,
+		u.remark
+	FROM
+		teacher_user tu
+	LEFT JOIN sys_user u ON u.user_id = tu.user_id
+	where u.del_flag = 0 and u.`status` = 0
+	</select>
+
+	<!--根据教员的证件号判断是否已存在-->
+	<select id="checkNotUniqueWithIdNumber" parameterType="String" resultMap="SysUserResult">
+		SELECT
+			 u.login_name, u.user_name, u.user_type, u.email, u.avatar, u.phonenumber, u.sex, u.password, u.salt, u.status, u.del_flag, u.login_ip, u.login_date, u.pwd_update_date, u.create_time, u.remark
+		FROM
+			sys_user u where u.login_name = #{idNumber}
+			and u.del_flag = 0
+		LIMIT 1
+	</select>
+	
+	<sql id="selectUserVo">
+        select  u.user_id, u.dept_id, u.login_name, u.user_name, u.user_type, u.email, u.avatar, u.phonenumber, u.sex, u.password, u.salt, u.status, u.del_flag, u.login_ip, u.login_date, u.pwd_update_date, u.create_time, u.remark,
+       		    d.dept_id, d.parent_id, d.ancestors, d.dept_name, d.order_num, d.leader, d.status as dept_status,
+       		    r.role_id, r.role_name, r.role_key, r.role_sort, r.data_scope, r.status as role_status
+		from sys_user u
+			 left join sys_dept d on u.dept_id = d.dept_id
+			 left join sys_user_role ur on u.user_id = ur.user_id
+			 left join sys_role r on r.role_id = ur.role_id
+    </sql>
+	
+	<select id="selectUserList" parameterType="SysUser" resultMap="SysUserResult">
+		select * from (
+			select u.user_id, u.dept_id, u.login_name, u.user_name, u.user_type,
+			u.email, u.avatar, u.phonenumber, u.password, u.sex, u.salt,
+			u.status, u.del_flag, u.login_ip, u.login_date, u.create_by,
+			u.create_time, u.remark, d.dept_name, d.leader,
+			CASE
+			WHEN ( u.user_id ) in (1) THEN 3
+			WHEN ( u.user_id ) in (
+				SELECT DISTINCT
+				u.user_id
+				FROM
+				sys_user u
+				JOIN sys_user_role ur ON u.user_id = ur.user_id
+				LEFT JOIN sys_role r ON ur.role_id = r.role_id
+				WHERE
+				r.role_id = 10
+			) THEN 4
+			WHEN ( u.user_id ) IN ( SELECT u.user_id FROM student_user su JOIN sys_user u ON su.user_id = u.user_id ) THEN
+			1
+			WHEN ( u.user_id ) IN ( SELECT u.user_id FROM teacher_user tu JOIN sys_user u ON tu.user_id = u.user_id ) THEN
+			2 ELSE 0
+			END identityFlag
+			from sys_user u
+			left join sys_dept d on u.dept_id = d.dept_id
+			where u.del_flag = '0'
+			<if test="userId != null and userId != 0">
+				AND u.user_id = #{userId}
+			</if>
+			<if test="loginName != null and loginName != ''">
+				AND (u.login_name like concat('%', #{loginName}, '%') or u.user_name like concat('%', #{loginName}, '%'))
+			</if>
+			<if test="status != null and status != ''">
+				AND u.status = #{status}
+			</if>
+			<if test="phonenumber != null and phonenumber != ''">
+				AND u.phonenumber like concat('%', #{phonenumber}, '%')
+			</if>
+			<if test="params.beginTime != null and params.beginTime != ''"><!-- 开始时间检索 -->
+				AND date_format(u.create_time,'%y%m%d') &gt;= date_format(#{params.beginTime},'%y%m%d')
+			</if>
+			<if test="params.endTime != null and params.endTime != ''"><!-- 结束时间检索 -->
+				AND date_format(u.create_time,'%y%m%d') &lt;= date_format(#{params.endTime},'%y%m%d')
+			</if>
+			<if test="deptId != null and deptId != 0">
+				AND (u.dept_id = #{deptId} OR u.dept_id IN ( SELECT t.dept_id FROM sys_dept t WHERE FIND_IN_SET (#{deptId},ancestors) ))
+			</if>
+			<!-- 数据范围过滤 -->
+			${params.dataScope}
+		) newUser
+			<if test="identityFlag != null and identityFlag != ''">
+			 where 	newUser.identityFlag = #{identityFlag}
+			</if>
+	</select>
+	
+	<select id="selectAllocatedList" parameterType="SysUser" resultMap="SysUserResult">
+	    select distinct u.user_id, u.dept_id, u.login_name, u.user_name, u.user_type, u.email, u.avatar, u.phonenumber, u.status, u.create_time
+	    from sys_user u
+			 left join sys_dept d on u.dept_id = d.dept_id
+			 left join sys_user_role ur on u.user_id = ur.user_id
+			 left join sys_role r on r.role_id = ur.role_id
+	    where u.del_flag = '0' and r.role_id = #{roleId}
+	    <if test="loginName != null and loginName != ''">
+			AND u.login_name like concat('%', #{loginName}, '%')
+		</if>
+		<if test="phonenumber != null and phonenumber != ''">
+			AND u.phonenumber like concat('%', #{phonenumber}, '%')
+		</if>
+		<!-- 数据范围过滤 -->
+		${params.dataScope}
+	</select>
+	
+	<select id="selectUnallocatedList" parameterType="SysUser" resultMap="SysUserResult">
+	    select distinct u.user_id, u.dept_id, u.login_name, u.user_name, u.user_type, u.email, u.avatar, u.phonenumber, u.status, u.create_time
+	    from sys_user u
+			 left join sys_dept d on u.dept_id = d.dept_id
+			 left join sys_user_role ur on u.user_id = ur.user_id
+			 left join sys_role r on r.role_id = ur.role_id
+	    where u.del_flag = '0' and (r.role_id != #{roleId} or r.role_id IS NULL)
+	    and u.user_id not in (select u.user_id from sys_user u inner join sys_user_role ur on u.user_id = ur.user_id and ur.role_id = #{roleId})
+	    <if test="loginName != null and loginName != ''">
+			AND u.login_name like concat('%', #{loginName}, '%')
+		</if>
+		<if test="phonenumber != null and phonenumber != ''">
+			AND u.phonenumber like concat('%', #{phonenumber}, '%')
+		</if>
+		<!-- 数据范围过滤 -->
+		${params.dataScope}
+	</select>
+	
+	<select id="selectUserByLoginName" parameterType="String" resultMap="SysUserResult">
+	    <include refid="selectUserVo"/>
+		where u.login_name = #{userName} and u.del_flag = '0'
+	</select>
+	
+	<select id="selectUserByPhoneNumber" parameterType="String" resultMap="SysUserResult">
+		<include refid="selectUserVo"/>
+		where u.phonenumber = #{phonenumber} and u.del_flag = '0'
+	</select>
+	
+	<select id="selectUserByEmail" parameterType="String" resultMap="SysUserResult">
+	    <include refid="selectUserVo"/>
+		where u.email = #{email} and u.del_flag = '0'
+	</select>
+	
+	<select id="checkLoginNameUnique" parameterType="String" resultMap="SysUserResult">
+		select user_id, login_name from sys_user where login_name=#{loginName} and del_flag = '0' limit 1
+	</select>
+	
+	<select id="checkPhoneUnique" parameterType="String" resultMap="SysUserResult">
+		select user_id, phonenumber from sys_user where phonenumber=#{phonenumber} and del_flag = '0' limit 1
+	</select>
+	
+	<select id="checkEmailUnique" parameterType="String" resultMap="SysUserResult">
+		select user_id, email from sys_user where email=#{email} and del_flag = '0' limit 1
+	</select>
+	
+	<select id="selectUserById" parameterType="Long" resultMap="SysUserResult">
+		<include refid="selectUserVo"/>
+		where u.user_id = #{userId}
+	</select>
+	
+	<delete id="deleteUserById" parameterType="Long">
+ 		update sys_user set del_flag = '2' where user_id = #{userId}
+ 	</delete>
+ 	
+ 	<delete id="deleteUserByIds" parameterType="Long">
+ 		update sys_user set del_flag = '2' where user_id in
+ 		<foreach collection="array" item="userId" open="(" separator="," close=")">
+ 			#{userId}
+        </foreach> 
+ 	</delete>
+ 	
+ 	<update id="updateUser" parameterType="SysUser">
+ 		update sys_user
+ 		<set>
+ 			<if test="deptId != null and deptId != 0">dept_id = #{deptId},</if>
+ 			<if test="loginName != null and loginName != ''">login_name = #{loginName},</if>
+ 			<if test="userName != null and userName != ''">user_name = #{userName},</if>
+ 			<if test="userType != null and userType != ''">user_type = #{userType},</if>
+ 			<if test="email != null and email != ''">email = #{email},</if>
+ 			<if test="phonenumber != null and phonenumber != ''">phonenumber = #{phonenumber},</if>
+ 			<if test="sex != null and sex != ''">sex = #{sex},</if>
+ 			<if test="avatar != null and avatar != ''">avatar = #{avatar},</if>
+ 			<if test="password != null and password != ''">password = #{password},</if>
+ 			<if test="salt != null and salt != ''">salt = #{salt},</if>
+ 			<if test="status != null and status != ''">status = #{status},</if>
+ 			<if test="loginIp != null and loginIp != ''">login_ip = #{loginIp},</if>
+ 			<if test="loginDate != null">login_date = #{loginDate},</if>
+ 			<if test="pwdUpdateDate != null">pwd_update_date = #{pwdUpdateDate},</if>
+ 			<if test="updateBy != null and updateBy != ''">update_by = #{updateBy},</if>
+ 			<if test="remark != null">remark = #{remark},</if>
+ 			update_time = sysdate()
+ 		</set>
+ 		where user_id = #{userId}
+	</update>
+ 	
+ 	<insert id="insertUser" parameterType="SysUser" useGeneratedKeys="true" keyProperty="userId">
+ 		insert into sys_user(
+ 			<if test="userId != null and userId != 0">user_id,</if>
+ 			<if test="deptId != null and deptId != 0">dept_id,</if>
+ 			<if test="loginName != null and loginName != ''">login_name,</if>
+ 			<if test="userName != null and userName != ''">user_name,</if>
+ 			<if test="userType != null and userType != ''">user_type,</if>
+ 			<if test="email != null and email != ''">email,</if>
+ 			<if test="avatar != null and avatar != ''">avatar,</if>
+ 			<if test="phonenumber != null and phonenumber != ''">phonenumber,</if>
+ 			<if test="sex != null and sex != ''">sex,</if>
+ 			<if test="password != null and password != ''">password,</if>
+ 			<if test="salt != null and salt != ''">salt,</if>
+ 			<if test="status != null and status != ''">status,</if>
+ 			<if test="pwdUpdateDate != null">pwd_update_date,</if>
+ 			<if test="createBy != null and createBy != ''">create_by,</if>
+ 			<if test="remark != null and remark != ''">remark,</if>
+ 			create_time
+ 		)values(
+ 			<if test="userId != null and userId != ''">#{userId},</if>
+ 			<if test="deptId != null and deptId != ''">#{deptId},</if>
+ 			<if test="loginName != null and loginName != ''">#{loginName},</if>
+ 			<if test="userName != null and userName != ''">#{userName},</if>
+ 			<if test="userType != null and userType != ''">#{userType},</if>
+ 			<if test="email != null and email != ''">#{email},</if>
+ 			<if test="avatar != null and avatar != ''">#{avatar},</if>
+ 			<if test="phonenumber != null and phonenumber != ''">#{phonenumber},</if>
+ 			<if test="sex != null and sex != ''">#{sex},</if>
+ 			<if test="password != null and password != ''">#{password},</if>
+ 			<if test="salt != null and salt != ''">#{salt},</if>
+ 			<if test="status != null and status != ''">#{status},</if>
+ 			<if test="pwdUpdateDate != null">#{pwdUpdateDate},</if>
+ 			<if test="createBy != null and createBy != ''">#{createBy},</if>
+ 			<if test="remark != null and remark != ''">#{remark},</if>
+ 			sysdate()
+ 		)
+	</insert>
+
+	<!--根据教员id查询关联的用户-->
+	<select id="selectUserByTeacherId" parameterType="long" resultType="com.courseManager.common.core.domain.entity.SysUser">
+		SELECT
+			u.*
+		FROM
+			sys_user u
+			LEFT JOIN teacher_user tu ON u.user_id = tu.user_id
+		WHERE
+			tu.teacher_id = #{teacherId}
+	</select>
+
+	<!--获取当前课题的所有不在小组中的学员-->
+	<select id="getNotInGroupStudents" parameterType="Long" resultMap="SysUserResult">
+		SELECT
+			u.user_id,
+			u.user_name,
+			u.login_name
+		FROM
+			course_user cu
+			LEFT JOIN sys_user u ON cu.student_id = u.user_id
+			LEFT JOIN course c ON c.course_id = cu.course_id
+		WHERE
+			c.del_flag = 0
+			AND c.course_id = #{courseId}
+			AND u.user_id NOT IN (
+			SELECT
+				gu.student_id
+			FROM
+				group_user gu
+				LEFT JOIN `group` g ON gu.group_id = g.group_id
+		WHERE
+			g.course_id = #{courseId} and g.del_flag = 0 )
+	</select>
+
+	<!--根据小组id查询到在该小组的学员-->
+	<select id="selectInGroupStudent" parameterType="Long" resultMap="SysUserResult">
+		SELECT
+			u.user_id,
+			u.user_name,
+			u.login_name
+		FROM
+			course_user cu
+			LEFT JOIN sys_user u ON cu.student_id = u.user_id
+			LEFT JOIN course c ON c.course_id = cu.course_id
+			LEFT JOIN `group` g on g.course_id = c.course_id
+			LEFT JOIN group_user gu on gu.group_id = g.group_id
+		WHERE
+		gu.group_id = #{groupId}
+		AND u.user_id IN (
+			SELECT
+				gu.student_id
+			FROM
+				group_user gu
+				LEFT JOIN `group` g ON gu.group_id = g.group_id
+		WHERE
+			gu.group_id = #{groupId} and g.del_flag = 0)
+	</select>
+
+	<!--根据课题id和用户id 查询该用户在该课题小组的学员-->
+	<select id="getGroupUsersByCourseIdAndUserId" resultMap="SysUserResult">
+		SELECT
+			u.user_id,
+			u.user_name,
+			u.sex,
+			u.phonenumber,
+			u.`status`
+		FROM
+			group_user gu
+			LEFT JOIN sys_user u ON gu.gu.student_id = u.user_id
+		WHERE
+			gu.group_id = (
+			SELECT
+				g.group_id
+			FROM
+				group_user gu
+				LEFT JOIN `group` g ON gu.group_id = g.group_id
+				LEFT JOIN course c ON c.course_id = g.course_id
+			WHERE
+			gu.student_id = #{userId}
+			AND g.course_id = #{courseId})
+	</select>
+
+	<!--根据文件id查询拥有该文件权限的用户-->
+	<select id="getusersByAssignPublic" resultMap="SysUserResult">
+		SELECT
+			u.user_id,
+			u.user_name,
+			u.login_name,
+			u.sex,
+			u.phonenumber,
+			u.create_time,
+			u.create_by,
+			CASE
+			WHEN ( u.user_id ) IN (
+			SELECT
+			u.user_id
+			FROM
+			resource_file f
+			JOIN resource_public_file pf ON f.file_id = pf.file_id
+			LEFT JOIN public_user_assign pua ON pua.public_file_id = pf.public_file_id
+			LEFT JOIN sys_user u ON u.user_id = pua.user_id
+			WHERE
+			pf.file_id = #{fId}
+			) THEN
+			1 ELSE 0
+			END AS assingFlag
+		FROM
+			student_user su
+			JOIN sys_user u ON u.user_id = su.user_id
+		<where>
+			<if test="sysUser.userId != null and sysUser.userId != 0">
+				AND u.user_id = #{sysUser.userId}
+			</if>
+			<if test="sysUser.loginName != null and sysUser.loginName != ''">
+				AND u.login_name like concat('%', #{sysUser.loginName}, '%')
+			</if>
+			<if test="sysUser.sex != null and sysUser.sex != ''">
+				AND u.sex = #{sysUser.sex}
+			</if>
+			<if test="sysUser.status != null and sysUser.status != ''">
+				AND u.status = #{sysUser.status}
+			</if>
+			<if test="sysUser.phonenumber != null and sysUser.phonenumber != ''">
+				AND u.phonenumber like concat('%', #{sysUser.phonenumber}, '%')
+			</if>
+			<if test="sysUser.deptId != null and sysUser.deptId != 0">
+				AND (u.dept_id = #{sysUser.deptId} OR u.dept_id IN ( SELECT t.dept_id FROM sys_dept t WHERE FIND_IN_SET (#{sysUser.deptId},ancestors) ))
+			</if>
+		</where>
+		ORDER BY assingFlag DESC
+	</select>
+
+	<!--获取所有学员-->
+	<select id="getUsersWithStudent" resultMap="SysUserResult">
+		SELECT
+			u.user_id,
+			u.user_name,
+			u.login_name,
+			u.sex,
+			u.phonenumber,
+			u.create_time,
+			u.create_by,
+
+		FROM
+			student_user su
+			JOIN sys_user u ON u.user_id = su.user_id
+		<where>
+			<if test="sysUser.loginName != null and sysUser.loginName != ''">
+				AND u.login_name like concat('%', #{sysUser.loginName}, '%')
+			</if>
+			<if test="sysUser.sex != null and sysUser.sex != ''">
+				AND u.sex = #{sysUser.sex}
+			</if>
+			<if test="sysUser.status != null and sysUser.status != ''">
+				AND u.status = #{sysUser.status}
+			</if>
+			<if test="sysUser.phonenumber != null and sysUser.phonenumber != ''">
+				AND u.phonenumber like concat('%', #{sysUser.phonenumber}, '%')
+			</if>
+			<if test="sysUser.deptId != null and sysUser.deptId != 0">
+				AND (u.dept_id = #{sysUser.deptId} OR u.dept_id IN ( SELECT t.dept_id FROM sys_dept t WHERE FIND_IN_SET (#{sysUser.deptId},ancestors) ))
+			</if>
+		</where>
+	</select>
+
+	<select id="checkPhoneUniqueByLoginName" resultMap="SysUserResult">
+		SELECT
+			user_id,
+			phonenumber
+		FROM
+			sys_user
+		WHERE
+			phonenumber = #{phonenumber}
+			AND login_name != #{loginName}
+			and del_flag = '0' limit 1
+	</select>
+</mapper>

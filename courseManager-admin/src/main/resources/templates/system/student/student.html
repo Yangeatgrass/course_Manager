@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="zh" xmlns:th="http://www.thymeleaf.org" xmlns:shiro="http://www.pollix.at/thymeleaf/shiro">
+<head>
+    <th:block th:include="include :: header('学员列表')"/>
+    <th:block th:include="include :: layout-latest-css"/>
+
+</head>
+<body class="gray-bg">
+<div class="container-div">
+    <div class="row">
+        <div class="col-sm-12 search-collapse">
+            <form id="formId">
+                <div class="select-list">
+                    <ul>
+                        <li>
+                            <label>学号：</label>
+                            <input type="text" name="sNumber"/>
+                        </li>
+                        <li>
+                            <label>学员姓名：</label>
+                            <input type="text" name="studentName"/>
+                        </li>
+                        <li>
+                            <label>年级：</label>
+                            <select name="grade" th:with="type=${@dict.getType('sys_student_grade')}">
+                                <option value="">所有</option>
+                                <option th:each="dict : ${type}" th:text="${dict.dictLabel}"
+                                        th:value="${dict.dictValue}"></option>
+                            </select>
+                        </li>
+<!--                        <li>-->
+<!--                            <label>性别：</label>-->
+<!--                            <select name="gender" th:with="type=${@dict.getType('sys_user_sex')}">-->
+<!--                                <option value="">所有</option>-->
+<!--                                <option th:each="dict : ${type}" th:text="${dict.dictLabel}"-->
+<!--                                        th:value="${dict.dictValue}"></option>-->
+<!--                            </select>-->
+<!--                        </li>-->
+<!--                        <li>-->
+<!--                            <label>电话号码：</label>-->
+<!--                            <input type="text" name="phoneNumber"/>-->
+<!--                        </li>-->
+<!--                        <li>-->
+<!--                            <label>政治面貌：</label>-->
+<!--                            <select name="political" th:with="type=${@dict.getType('sys_student_political')}">-->
+<!--                                <option value="">所有</option>-->
+<!--                                <option th:each="dict : ${type}" th:text="${dict.dictLabel}"-->
+<!--                                        th:value="${dict.dictValue}"></option>-->
+<!--                            </select>-->
+<!--                        </li>-->
+<!--                        <li>-->
+<!--                            <label>是否注册：</label>-->
+<!--                            <select name="flag" th:with="type=${@dict.getType('sys_register_status')}">-->
+<!--                                <option value="">所有</option>-->
+<!--                                <option th:each="dict : ${type}" th:text="${dict.dictLabel}"-->
+<!--                                        th:value="${dict.dictValue}"></option>-->
+<!--                            </select>-->
+<!--                        </li>-->
+                        <li>
+                            <label>状态：</label>
+                            <select name="status" th:with="type=${@dict.getType('sys_teacher_status')}">
+                                <option value="">所有</option>
+                                <option th:each="dict : ${type}" th:text="${dict.dictLabel}"
+                                        th:value="${dict.dictValue}"></option>
+                            </select>
+                        </li>
+                        <li>
+                            <a class="btn btn-primary btn-rounded btn-sm" onclick="$.table.search()"><i
+                                    class="fa fa-search"></i>&nbsp;搜索</a>
+                            <a class="btn btn-warning btn-rounded btn-sm" onclick="$.form.reset()"><i
+                                    class="fa fa-refresh"></i>&nbsp;重置</a>
+                        </li>
+                    </ul>
+                </div>
+            </form>
+        </div>
+
+        <div class="btn-group-sm" id="toolbar" role="group">
+            <a class="btn btn-success" onclick="$.operate.addFull()" shiro:hasPermission="system:student:add">
+                <i class="fa fa-plus"></i> 添加
+            </a>
+            <a class="btn btn-primary single disabled" onclick="$.operate.editFull()"
+               shiro:hasPermission="system:student:edit">
+                <i class="fa fa-edit"></i> 修改
+            </a>
+            <a class="btn btn-danger multiple disabled" onclick="$.operate.removeAll()"
+               shiro:hasPermission="system:student:remove">
+                <i class="fa fa-remove"></i> 删除
+            </a>
+            <a class="btn btn-info" onclick="$.table.importExcel()" shiro:hasPermission="system:student:import">
+                <i class="fa fa-upload"></i> 导入
+            </a>
+            <a class="btn btn-warning" onclick="$.table.exportExcel()" shiro:hasPermission="system:student:export">
+                <i class="fa fa-download"></i> 导出
+            </a>
+            <a class="btn btn-info" onclick="registerStudent()" shiro:hasPermission="system:user:add">
+                <i class="fa fa-check-square-o"></i> 注册
+            </a>
+        </div>
+        <div class="col-sm-12 select-table table-striped">
+            <table id="bootstrap-table"></table>
+        </div>
+    </div>
+</div>
+<th:block th:include="include :: footer"/>
+<th:block th:include="include :: layout-latest-js"/>
+
+<script th:inline="javascript">
+    var editFlag = [[${@permission.hasPermi('system:student:edit')}]];
+    var removeFlag = [[${@permission.hasPermi('system:student:remove')}]];
+    var addStudentFlag = [[${@permission.hasPermi('system:student:add')}]];
+    var registeFlag = [[${@permission.hasPermi('system:student:registe')}]];
+
+    var gradeDatas = [[${@dict.getType('sys_student_grade')}]];
+    var genderDatas = [[${@dict.getType('sys_user_sex')}]];
+    var politicalDatas = [[${@dict.getType('sys_student_political')}]];
+    var flagDatas = [[${@dict.getType('sys_teacher_status')}]];
+    var datas = [[${@dict.getType('sys_register_status')}]];
+
+    var prefix = ctx + "system/student";
+
+    $(function () {
+        var options = {
+            url: prefix + "/list",
+            createUrl: prefix + "/add",
+            updateUrl: prefix + "/edit/{id}",
+            removeUrl: prefix + "/remove",
+            exportUrl: prefix + "/export",
+            importUrl: prefix + "/importData",
+            importTemplateUrl: prefix + "/importTemplate",
+            modalName: "学员",
+            sortName: "createTime",
+            sortOrder: "desc",
+            columns: [{
+                checkbox: true
+            },
+                {
+                    field: 'studentId',
+                    title: '学员编号',
+                    visible: false
+                },
+                {
+                    field: 'student',
+                    title: '学员信息',
+                    width: '350px',
+                    formatter: function (value, row, index) {
+                        console.log(row)
+                        var actions = [];
+                        if (row.avatar == undefined || row.avatar === '') {
+                            actions.push('<img style="width: 18%;margin-top: 10px;float: left" class="img-circle" alt="学员头像" src="/img/111.png"/>')
+                        } else {
+                            actions.push('<img style="width: 18%;margin-top: 10px;float: left" class="img-circle" alt="学员头像" src="' + row.avatar + '"/>')
+                        }
+                        actions.push('<div style="margin-left: 20%;margin-top: 7px;"><span style="color: #1a7bb9;font-weight:bold">' + row.studentName +
+                            ' </span><span style="color: #afafaf">(学号:' + row.snumber + ')</span></div>')
+                        actions.push('<div style="margin-left: 20%;margin-top: 7px;color: #afafaf">性别：' + (row.gender == 1 ? "男" : "女") + '，生日：' + (row.birth==null?"无":row.birth) + '</div>')
+                        actions.push('<div style="margin-left: 20%;margin-top: 7px;color: #afafaf">民族：' + (row.nation==null?"无":row.nation) + '，籍贯：' + (row.origin==null?"无":row.origin) + '</div>')
+                        return actions.join('');
+                    }
+                },
+                {
+                    field: 'registerFlag',
+                    title: '注册状态',
+                    width: '50px',
+                    formatter: function (value, row, index) {
+                        return $.table.selectDictLabel(datas, value);
+                    }
+                },
+                {
+                    field: 'grade',
+                    title: '年级',
+                    align: "center",
+                    sortable: true,
+                    formatter: function (value, row, index) {
+                        return $.table.selectDictLabel(gradeDatas, value);
+                    }
+                },
+                // {
+                //     field: 'birth',
+                //     title: '出生日期',
+                //     align: 'center',
+                //
+                // },
+                // {
+                //     field: 'idCard',
+                //     title: '身份证号码'
+                // },
+                {
+                    field: 'phoneNumber',
+                    title: '电话号码',
+                    align: 'center',
+                },
+                // {
+                //     field: 'enrollmentTime',
+                //     title: '入学时间',
+                //     sortable: true,
+                // },
+                {
+                    field: 'political',
+                    title: '政治面貌',
+                    formatter: function (value, row, index) {
+                        return $.table.selectDictLabel(politicalDatas, value);
+                    }
+                },
+                {
+                    field: 'majorsStudied',
+                    title: '所学专业',
+                    align: 'center',
+                },
+                {
+                    field: 'professional',
+                    title: '专业方向',
+                    align: 'center',
+                },
+                {
+                    field: 'createTime',
+                    title: '创建时间',
+                    align: "center",
+                    sortable: true
+                },
+                {
+                    visible: editFlag == 'hidden' ? false : true,
+                    field: 'status',
+                    title: '状态',
+                    width: '50px',
+                    formatter: function (value, row, index) {
+                        return statusTools(row);
+                    }
+                },
+                {
+                    title: '操作',
+                    align: 'center',
+                    width: '210px',
+                    align: 'left',
+                    formatter: function (value, row, index) {
+                        var actions = [];
+                        actions.push('<a class="btn btn-success btn-xs ' + editFlag + '" href="javascript:void(0)" onclick="$.operate.editFull(\'' + row.studentId + '\')"><i class="fa fa-edit"></i>编辑</a> ');
+                        actions.push('<a class="btn btn-danger btn-xs ' + removeFlag + '" href="javascript:void(0)" onclick="$.operate.remove(\'' + row.studentId + '\')"><i class="fa fa-remove"></i>删除</a> ');
+                        if(row.registerFlag===0){
+                            actions.push('<a class="btn btn-info btn-xs ' + registeFlag + '" href="javascript:void(0)" onclick="register(\'' + row.studentId + '\')"><i class="fa fa-check-square-o"></i>注册</a> ');
+                        }
+                        return actions.join('');
+                    }
+                }]
+        };
+        $.table.init(options);
+    });
+
+    /* 注册学员*/
+    function register(id) {
+        var arr = new Array(id)
+        $.modal.confirm("确定" + "<nobr style='color: cornflowerblue'> 注册 <nobr/>" + "此学员吗？", function () {
+            //注册到用户表中，并关联起来
+            $.operate.post(prefix + "/registerStudent", {"studentIds": arr.join()});
+        });
+    }
+
+    /* 批量注册*/
+    function registerStudent() {
+        //获取勾选教员ids
+        var rows = $.common.isEmpty(table.options.uniqueId) ? $.table.selectFirstColumns() : $.table.selectColumns(table.options.uniqueId);
+        if (rows.length == 0) {
+            $.modal.alertWarning("请至少选择一条记录");
+            return;
+        }
+        $.modal.confirm("确定注册所选的" + rows.length + "位学员吗？", function () {
+            //注册到用户表中，并关联起来
+            $.operate.post(prefix + "/registerStudent", {"studentIds": rows.join()});
+        });
+
+    }
+
+    /* 学员状态显示 */
+    function statusTools(row) {
+        if (row.status == 1) {
+            return '<i class=\"fa fa-toggle-off text-danger fa-2x\" onclick="enable(\'' + row.studentId + '\',\'' + row.snumber + '\')"></i> ';
+        } else {
+            return '<i class=\"fa fa-toggle-on text-info fa-2x\" onclick="disable(\'' + row.studentId + '\',\'' + row.snumber + '\')"></i> ';
+        }
+    }
+
+    /* 学员管理-停用 */
+    function disable(id,sNumber) {
+        $.modal.confirm("确认要停用学员吗？", function () {
+            $.operate.post(prefix + "/changeStatus", {"sNumber":sNumber, "studentId": id, "status": 1});
+        })
+    }
+
+    /* 学员管理启用 */
+    function enable(id,sNumber) {
+        $.modal.confirm("确认要启用学员吗？", function () {
+            $.operate.post(prefix + "/changeStatus", {"sNumber":sNumber, "studentId": id, "status": 0});
+        })
+    }
+
+</script>
+</body>
+
+<!-- 导入区域 -->
+<script id="importTpl" type="text/template">
+    <form enctype="multipart/form-data" class="mt20 mb10">
+        <div class="col-xs-offset-1">
+            <input type="file" id="file" name="file"/>
+            <div class="mt10 pt5">
+<!--                <input type="checkbox" id="updateSupport" name="updateSupport" title="如果登录账户已经存在，更新这条数据。"> 是否更新已经存在的学员数据-->
+                &nbsp; <a onclick="$.table.importTemplate()" class="btn btn-default btn-xs"><i
+                    class="fa fa-file-excel-o"></i>下载模板</a>
+            </div>
+            <font color="red" class="pull-left mt10">
+                提示：仅允许导入“xls”或“xlsx”格式文件！
+            </font>
+        </div>
+    </form>
+</script>
+
+</html>

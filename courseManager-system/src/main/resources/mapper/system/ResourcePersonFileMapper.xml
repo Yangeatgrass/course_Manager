@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.courseManager.system.mapper.ResourcePersonFileMapper">
+    
+    <resultMap type="ResourcePersonFile" id="ResourcePersonFileResult">
+        <result property="personFileId"    column="person_file_id"    />
+        <result property="studentId"    column="student_id"    />
+        <result property="fileId"    column="file_id"    />
+    </resultMap>
+
+    <sql id="selectResourcePersonFileVo">
+        select person_file_id, student_id, file_id from resource_person_file
+    </sql>
+
+    <select id="selectResourcePersonFileList" parameterType="ResourcePersonFile" resultMap="ResourcePersonFileResult">
+        <include refid="selectResourcePersonFileVo"/>
+        <where>  
+            <if test="userId != null "> and student_id = #{studentId}</if>
+            <if test="fileId != null "> and file_id = #{fileId}</if>
+        </where>
+    </select>
+    
+    <select id="selectResourcePersonFileByPersonFileId" parameterType="Long" resultMap="ResourcePersonFileResult">
+        <include refid="selectResourcePersonFileVo"/>
+        where person_file_id = #{personFileId}
+    </select>
+        
+    <insert id="insertResourcePersonFile" parameterType="ResourcePersonFile" useGeneratedKeys="true" keyProperty="personFileId">
+        insert into resource_person_file
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="studentId != null">student_id,</if>
+            <if test="fileId != null">file_id,</if>
+         </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="studentId != null">#{studentId},</if>
+            <if test="fileId != null">#{fileId},</if>
+         </trim>
+    </insert>
+
+    <update id="updateResourcePersonFile" parameterType="ResourcePersonFile">
+        update resource_person_file
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="studentId != null">student_id = #{studentId},</if>
+            <if test="fileId != null">file_id = #{fileId},</if>
+        </trim>
+        where person_file_id = #{personFileId}
+    </update>
+
+    <delete id="deleteResourcePersonFileByPersonFileId" parameterType="Long">
+        delete from resource_person_file where person_file_id = #{personFileId}
+    </delete>
+
+    <delete id="deleteResourcePersonFileByPersonFileIds" parameterType="String">
+        delete from resource_person_file where file_id in
+        <foreach item="personFileId" collection="array" open="(" separator="," close=")">
+            #{personFileId}
+        </foreach>
+    </delete>
+
+    <select id="verifyFileFolderUnionByPerson" resultType="int">
+        SELECT
+        count(1)
+        FROM
+        resource_file f
+        LEFT JOIN resource_person_file pf ON f.file_id = pf.file_id
+        WHERE
+        pf.student_id = #{userId}
+        AND f.parent_id = #{resourceFile.parentId}
+        <if test="resourceFile.fileType == -1 "> and f.file_type = -1 </if>
+        <if test="resourceFile.fileType != -1 "> and f.file_type in (0,1,2,3,4,5,6) </if>
+        AND f.file_name = #{resourceFile.fileName}
+    </select>
+</mapper>

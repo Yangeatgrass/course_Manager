@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.courseManager.system.mapper.ResourceCourseFileMapper">
+    
+    <resultMap type="ResourceCourseFile" id="ResourceCourseFileResult">
+        <result property="courseFileId"    column="course_file_id"    />
+        <result property="courseId"    column="course_id"    />
+        <result property="fileId"    column="file_id"    />
+    </resultMap>
+
+    <sql id="selectResourceCourseFileVo">
+        select course_file_id, course_id, file_id from resource_course_file
+    </sql>
+
+    <select id="selectResourceCourseFileList" parameterType="ResourceCourseFile" resultMap="ResourceCourseFileResult">
+        <include refid="selectResourceCourseFileVo"/>
+        <where>  
+            <if test="courseId != null "> and course_id = #{courseId}</if>
+            <if test="fileId != null "> and file_id = #{fileId}</if>
+        </where>
+    </select>
+    
+    <select id="selectResourceCourseFileByCourseFileId" parameterType="Long" resultMap="ResourceCourseFileResult">
+        <include refid="selectResourceCourseFileVo"/>
+        where course_file_id = #{courseFileId}
+    </select>
+        
+    <insert id="insertResourceCourseFile" parameterType="ResourceCourseFile">
+        insert into resource_course_file
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="courseFileId != null">course_file_id,</if>
+            <if test="courseId != null">course_id,</if>
+            <if test="fileId != null">file_id,</if>
+         </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="courseFileId != null">#{courseFileId},</if>
+            <if test="courseId != null">#{courseId},</if>
+            <if test="fileId != null">#{fileId},</if>
+         </trim>
+    </insert>
+
+    <update id="updateResourceCourseFile" parameterType="ResourceCourseFile">
+        update resource_course_file
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="courseId != null">course_id = #{courseId},</if>
+            <if test="fileId != null">file_id = #{fileId},</if>
+        </trim>
+        where course_file_id = #{courseFileId}
+    </update>
+
+    <delete id="deleteResourceCourseFileByCourseFileId" parameterType="Long">
+        delete from resource_course_file where course_file_id = #{courseFileId}
+    </delete>
+
+    <delete id="deleteResourceCourseFileByCourseFileIds" parameterType="String">
+        delete from resource_course_file where file_id in
+        <foreach item="fileId" collection="array" open="(" separator="," close=")">
+            #{fileId}
+        </foreach>
+    </delete>
+
+</mapper>

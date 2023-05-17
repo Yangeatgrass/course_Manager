@@ -1,0 +1,414 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.courseManager.system.mapper.StudentMapper">
+    
+    <resultMap type="Student" id="StudentResult">
+        <result property="studentId"    column="student_id"    />
+        <result property="studentName"    column="student_name"    />
+        <result property="grade"    column="grade"    />
+        <result property="gender"    column="gender"    />
+        <result property="birth"    column="birth"    />
+        <result property="origin"    column="origin"    />
+        <result property="nation"    column="nation"    />
+        <result property="idCard"    column="id_card"    />
+        <result property="phoneNumber"    column="phone_number"    />
+        <result property="sNumber"    column="s_number"    />
+        <result property="enrollmentTime"    column="enrollment_time"    />
+        <result property="political"    column="political"    />
+        <result property="majorsStudied"    column="majors_studied"    />
+        <result property="professional"    column="professional"    />
+        <result property="avatar"    column="avatar"    />
+        <result property="remark"    column="remark"    />
+        <result property="createBy"    column="create_by"    />
+        <result property="createTime"    column="create_time"    />
+        <result property="updateBy"    column="update_by"    />
+        <result property="updateTime"    column="update_time"    />
+        <result property="delFlag"    column="del_flag"    />
+        <result property="flag"    column="flag"    />
+        <result property="registerFlag"    column="registerFlag"    />
+        <result property="status"    column="status"    />
+        <result property="userId"    column="user_id"    />
+    </resultMap>
+
+    <sql id="selectStudentVo">
+        select student_id, nation ,student_name, grade, gender, birth, origin, id_card, phone_number,
+        s_number, enrollment_time, political, majors_studied, professional, avatar, remark, create_by,
+        create_time, update_by, update_time, del_flag, flag,status from student
+    </sql>
+
+    <sql id="StudentSqlBasic">
+        s.student_id, s.nation ,s.student_name, s.grade, s.gender, s.birth, s.origin, s.id_card, s.phone_number,
+        s.s_number, s.enrollment_time, s.political, s.majors_studied, s.professional, s.avatar, s.remark, s.create_by,
+        s.create_time, s.update_by, s.update_time, s.del_flag, s.flag,s.status
+    </sql>
+
+    <select id="selectStudentList" parameterType="Student" resultMap="StudentResult">
+        SELECT
+        <include refid="StudentSqlBasic"/>,
+        CASE
+        WHEN
+            ( su.user_id ) IN ( SELECT u.user_id FROM student_user su JOIN sys_user u ON su.user_id = u.user_id ) THEN
+            1 ELSE 0
+            END registerFlag
+        FROM
+        student s
+        LEFT JOIN student_user su ON s.student_id = su.student_id
+        <where>  
+            <if test="studentName != null  and studentName != ''"> and s.student_name like concat('%', #{studentName}, '%')</if>
+            <if test="grade != null "> and s.grade = #{grade}</if>
+            <if test="gender != null "> and s.gender = #{gender}</if>
+            <if test="birth != null "> and s.birth = #{birth}</if>
+            <if test="origin != null  and origin != ''"> and s.origin like concat('%', #{origin}, '%')</if>
+            <if test="idCard != null  and idCard != ''"> and s.id_card like concat('%', #{idCard}, '%')</if>
+            <if test="phoneNumber != null  and phoneNumber != ''"> and s.phone_number like concat('%', #{phoneNumber}, '%')</if>
+            <if test="sNumber != null  and sNumber != ''"> and s.s_number like concat('%', #{sNumber}, '%')</if>
+            <if test="enrollmentTime != null "> and s.enrollment_time = #{enrollmentTime}</if>
+            <if test="political != null "> and s.political = #{political}</if>
+            <if test="majorsStudied != null  and majorsStudied != ''"> and s.majors_studied like concat('%', #{majorsStudied}, '%')</if>
+            <if test="professional != null  and professional != ''"> and s.professional like concat('%', #{professional}, '%')</if>
+            <if test="flag != null "> and s.flag = #{flag}</if>
+            <if test="status != null "> and s.status = #{status}</if>
+            <if test="nation != null  and nation != ''"> and s.nation = #{nation}</if>
+            and s.del_flag = 0
+        </where>
+    </select>
+
+    <select id="selectStudentListTeacherView" parameterType="Student" resultMap="StudentResult">
+        SELECT
+            s.*
+        FROM
+            sys_user u
+            JOIN student_user su ON u.user_id = su.user_id
+            JOIN student s ON su.student_id = s.student_id
+        <where>
+            <if test="studentName != null  and studentName != ''"> and s.student_name like concat('%', #{studentName}, '%')</if>
+            <if test="grade != null "> and s.grade = #{grade}</if>
+            <if test="gender != null "> and s.gender = #{gender}</if>
+            <if test="birth != null "> and s.birth = #{birth}</if>
+            <if test="origin != null  and origin != ''"> and s.origin like concat('%', #{origin}, '%')</if>
+            <if test="idCard != null  and idCard != ''"> and s.id_card like concat('%', #{idCard}, '%')</if>
+            <if test="phoneNumber != null  and phoneNumber != ''"> and s.phone_number like concat('%', #{phoneNumber}, '%')</if>
+            <if test="sNumber != null  and sNumber != ''"> and s.s_number like concat('%', #{sNumber}, '%')</if>
+            <if test="enrollmentTime != null "> and s.enrollment_time = #{enrollmentTime}</if>
+            <if test="political != null "> and s.political = #{political}</if>
+            <if test="majorsStudied != null  and majorsStudied != ''"> and s.majors_studied like concat('%', #{majorsStudied}, '%')</if>
+            <if test="professional != null  and professional != ''"> and s.professional like concat('%', #{professional}, '%')</if>
+            <if test="flag != null "> and s.flag = #{flag}</if>
+            <if test="status != null "> and s.status = #{status}</if>
+            <if test="nation != null  and nation != ''"> and nation = #{nation}</if>
+            and s.del_flag = 0
+        </where>
+    </select>
+
+    <!--根据学员id查询是否已注册-->
+    <select id="checkNotUniqueByStudentId" parameterType="Long" resultMap="StudentResult">
+        SELECT
+        s.*
+        FROM
+        student s JOIN student_user su on s.student_id = su.student_id
+        WHERE
+        su.student_id = #{studentId}
+        limit 1
+    </select>
+    
+    <select id="selectStudentByStudentId" parameterType="Long" resultMap="StudentResult">
+        <include refid="selectStudentVo"/>
+        where student_id = #{studentId}
+    </select>
+
+        
+    <insert id="insertStudent" parameterType="Student" useGeneratedKeys="true" keyProperty="studentId">
+        insert into student
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="studentName != null">student_name,</if>
+            <if test="grade != null">grade,</if>
+            <if test="gender != null">gender,</if>
+            <if test="birth != null">birth,</if>
+            <if test="origin != null">origin,</if>
+            <if test="idCard != null">id_card,</if>
+            <if test="phoneNumber != null">phone_number,</if>
+            <if test="sNumber != null">s_number,</if>
+            <if test="enrollmentTime != null">enrollment_time,</if>
+            <if test="political != null">political,</if>
+            <if test="majorsStudied != null">majors_studied,</if>
+            <if test="professional != null">professional,</if>
+            <if test="avatar != null">avatar,</if>
+            <if test="remark != null">remark,</if>
+            <if test="createBy != null">create_by,</if>
+            <if test="createTime != null">create_time,</if>
+            <if test="updateBy != null">update_by,</if>
+            <if test="updateTime != null">update_time,</if>
+            <if test="delFlag != null">del_flag,</if>
+            <if test="flag != null">flag,</if>
+            <if test="status != null">status,</if>
+            <if test="nation != null">nation,</if>
+
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="studentName != null">#{studentName},</if>
+            <if test="grade != null">#{grade},</if>
+            <if test="gender != null">#{gender},</if>
+            <if test="birth != null">#{birth},</if>
+            <if test="origin != null">#{origin},</if>
+            <if test="idCard != null">#{idCard},</if>
+            <if test="phoneNumber != null">#{phoneNumber},</if>
+            <if test="sNumber != null">#{sNumber},</if>
+            <if test="enrollmentTime != null">#{enrollmentTime},</if>
+            <if test="political != null">#{political},</if>
+            <if test="majorsStudied != null">#{majorsStudied},</if>
+            <if test="professional != null">#{professional},</if>
+            <if test="avatar != null">#{avatar},</if>
+            <if test="remark != null">#{remark},</if>
+            <if test="createBy != null">#{createBy},</if>
+            <if test="createTime != null">#{createTime},</if>
+            <if test="updateBy != null">#{updateBy},</if>
+            <if test="updateTime != null">#{updateTime},</if>
+            <if test="delFlag != null">#{delFlag},</if>
+            <if test="flag != null">#{flag},</if>
+            <if test="status != null">#{status},</if>
+            <if test="nation != null">#{nation},</if>
+
+        </trim>
+    </insert>
+
+    <update id="updateStudent" parameterType="Student">
+        update student
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="studentName != null">student_name = #{studentName},</if>
+            <if test="grade != null">grade = #{grade},</if>
+            <if test="gender != null">gender = #{gender},</if>
+            <if test="birth != null">birth = #{birth},</if>
+            <if test="origin != null">origin = #{origin},</if>
+            <if test="idCard != null">id_card = #{idCard},</if>
+            <if test="phoneNumber != null">phone_number = #{phoneNumber},</if>
+            <if test="sNumber != null">s_number = #{sNumber},</if>
+            <if test="enrollmentTime != null">enrollment_time = #{enrollmentTime},</if>
+            <if test="political != null">political = #{political},</if>
+            <if test="majorsStudied != null">majors_studied = #{majorsStudied},</if>
+            <if test="professional != null">professional = #{professional},</if>
+            <if test="avatar != null">avatar = #{avatar},</if>
+            <if test="remark != null">remark = #{remark},</if>
+            <if test="createBy != null">create_by = #{createBy},</if>
+            <if test="createTime != null">create_time = #{createTime},</if>
+            <if test="updateBy != null">update_by = #{updateBy},</if>
+            <if test="updateTime != null">update_time = #{updateTime},</if>
+            <if test="delFlag != null">del_flag = #{delFlag},</if>
+            <if test="flag != null">flag = #{flag},</if>
+            <if test="status != null">status = #{status},</if>
+            <if test="nation != null">nation = #{nation},</if>
+
+        </trim>
+        where student_id = #{studentId}
+    </update>
+
+    <delete id="deleteStudentByStudentId" parameterType="Long">
+        delete from student where student_id = #{studentId}
+    </delete>
+
+    <!--删除操作 变为 修改del_flag标识符-->
+    <delete id="deleteStudentByStudentIds" parameterType="String">
+        update student set del_flag = 1 where student_id in
+        <foreach item="studentId" collection="array" open="(" separator="," close=")">
+            #{studentId}
+        </foreach>
+    </delete>
+
+    <!--验证学员的学号是否已存在学员表中-->
+    <select id="checkNotUniqueWithIdNumber" resultMap="StudentResult">
+        <include refid="selectStudentVo"/>
+        WHERE
+        s_number = #{sNumber}
+        and del_flag = 0
+        LIMIT 1
+    </select>
+
+    <!--根据登录名获取用户-->
+    <select id="getStudentByIdNumber" resultMap="StudentResult">
+        SELECT
+        <include refid="StudentSqlBasic"/>
+        from
+        student s
+        WHERE s.s_number = #{userLoginName}
+        and del_flag = 0
+        limit 1
+    </select>
+
+    <!--根据课题id查询没有加入该课题的学员-->
+    <select id="studentListByInvite" resultMap="StudentResult">
+        SELECT
+        s.*
+        FROM
+        student s
+        WHERE
+        s.del_flag = 0
+        AND s.`status` = 0
+        AND s.student_id NOT IN ( SELECT cu.student_id FROM course_user cu LEFT JOIN course c ON c.course_id = cu.course_id WHERE cu.course_id = #{courseId} )
+        <if test="sysUser.userId != null and sysUser.userId != 0">
+            AND u.user_id = #{sysUser.userId}
+        </if>
+        <if test="student.studentName != null  and student.studentName != ''"> and s.student_name like concat('%', #{student.studentName}, '%')</if>
+        <if test="student.grade != null "> and s.grade = #{student.grade}</if>
+        <if test="student.gender != null "> and s.gender = #{student.gender}</if>
+        <if test="student.birth != null "> and s.birth = #{student.birth}</if>
+        <if test="student.origin != null  and student.origin != ''"> and s.origin like concat('%', #{student.origin}, '%')</if>
+        <if test="student.idCard != null  and student.idCard != ''"> and s.id_card like concat('%', #{student.idCard}, '%')</if>
+        <if test="student.phoneNumber != null  and student.phoneNumber != ''"> and s.phone_number like concat('%', #{student.phoneNumber}, '%')</if>
+        <if test="student.sNumber != null  and student.sNumber != ''"> and s.s_number like concat('%', #{student.sNumber}, '%')</if>
+        <if test="student.enrollmentTime != null "> and s.enrollment_time = #{student.enrollmentTime}</if>
+        <if test="student.political != null "> and s.political = #{student.political}</if>
+        <if test="student.majorsStudied != null  and student.majorsStudied != ''"> and s.majors_studied like concat('%', #{student.majorsStudied}, '%')</if>
+        <if test="student.professional != null  and student.professional != ''"> and s.professional like concat('%', #{student.professional}, '%')</if>
+        <if test="student.flag != null "> and s.flag = #{student.flag}</if>
+        <if test="student.status != null "> and s.status = #{student.status}</if>
+        <if test="student.nation != null  and nation != ''"> and s.nation = #{student.nation}</if>
+
+    </select>
+
+    <!--获取加入了该课题的学员-->
+    <select id="getStudentList" resultMap="StudentResult">
+        SELECT
+            s.*
+        FROM
+            student s LEFT JOIN course_user cu on s.student_id = cu.student_id
+            LEFT JOIN course c on c.course_id = cu.course_id
+        WHERE
+            c.del_flag = 0
+            and c.course_id = #{courseId}
+            and s.del_flag = 0
+            and s.`status` = 0
+        <if test="student.studentName != null  and student.studentName != ''"> and s.student_name like concat('%', #{student.studentName}, '%')</if>
+        <if test="student.grade != null "> and s.grade = #{student.grade}</if>
+        <if test="student.gender != null "> and s.gender = #{student.gender}</if>
+        <if test="student.birth != null "> and s.birth = #{student.birth}</if>
+        <if test="student.origin != null  and student.origin != ''"> and s.origin like concat('%', #{student.origin}, '%')</if>
+        <if test="student.idCard != null  and student.idCard != ''"> and s.id_card like concat('%', #{student.idCard}, '%')</if>
+        <if test="student.phoneNumber != null  and student.phoneNumber != ''"> and s.phone_number like concat('%', #{student.phoneNumber}, '%')</if>
+        <if test="student.sNumber != null  and student.sNumber != ''"> and s.s_number like concat('%', #{student.sNumber}, '%')</if>
+        <if test="student.enrollmentTime != null "> and s.enrollment_time = #{student.enrollmentTime}</if>
+        <if test="student.political != null "> and s.political = #{student.political}</if>
+        <if test="student.majorsStudied != null  and student.majorsStudied != ''"> and s.majors_studied like concat('%', #{student.majorsStudied}, '%')</if>
+        <if test="student.professional != null  and student.professional != ''"> and s.professional like concat('%', #{student.professional}, '%')</if>
+        <if test="student.flag != null "> and s.flag = #{student.flag}</if>
+        <if test="student.status != null "> and s.status = #{student.status}</if>
+        <if test="student.nation != null  and nation != ''"> and s.nation = #{student.nation}</if>
+    </select>
+
+    <!--根据当前登录用户查询到学员信息-->
+    <select id="getStudentByUserId"  resultMap="StudentResult">
+        SELECT
+            s.*
+        FROM
+            student s
+            LEFT JOIN student_user su on  s.student_id = su.student_id
+            LEFT JOIN sys_user u ON su.user_id = u.user_id
+        WHERE
+            u.user_id = #{userId}
+            and u.del_flag = 0
+            and u.`status` = 0
+            LIMIT 1
+    </select>
+
+    <!--获取当前课题未分配小组的学员-->
+    <select id="getCourseNotAssignment" resultMap="StudentResult">
+        SELECT
+            s.*
+        FROM
+            student s LEFT JOIN
+            course_user cu on s.student_id = cu.student_id
+            LEFT JOIN course c ON c.course_id = cu.course_id
+        WHERE
+            c.del_flag = 0
+            and s.del_flag = 0
+            AND c.course_id = #{courseId}
+
+            AND s.student_id NOT IN (
+            SELECT
+                gu.student_id
+            FROM
+                group_user gu
+                LEFT JOIN `group` g ON gu.group_id = g.group_id
+        WHERE
+            g.course_id = #{courseId} and g.del_flag = 0 )
+        <if test="student.studentName != null  and student.studentName != ''"> and s.student_name like concat('%', #{student.studentName}, '%')</if>
+        <if test="student.gender != null "> and s.gender = #{student.gender}</if>
+        <if test="student.grade != null "> and s.grade = #{student.grade}</if>
+        <if test="student.status != null "> and s.status = #{student.status}</if>
+
+        <if test="student.sNumber != null  and student.sNumber != ''"> and s.s_number like concat('%', #{student.sNumber}, '%')</if>
+    </select>
+
+    <!--根据小组id查询到在该小组的学员-->
+    <select id="selectInGroupStudent" resultMap="StudentResult">
+        SELECT
+            s.*
+        FROM
+           	student s
+            LEFT JOIN group_user gu on s.student_id = gu.student_id
+            LEFT JOIN `group` g on gu.group_id = g.group_id
+        WHERE
+            gu.group_id = #{groupId}
+            and s.del_flag = 0
+            AND s.student_id IN (
+            SELECT
+                gu.student_id
+            FROM
+                group_user gu
+                LEFT JOIN `group` g ON gu.group_id = g.group_id
+            WHERE
+            gu.group_id = #{groupId}
+            AND g.del_flag = 0)
+        <if test="student.studentName != null  and student.studentName != ''"> and s.student_name like concat('%', #{student.studentName}, '%')</if>
+        <if test="student.gender != null "> and s.gender = #{student.gender}</if>
+        <if test="student.grade != null "> and s.grade = #{student.grade}</if>
+        <if test="student.sNumber != null  and student.sNumber != ''"> and s.s_number like concat('%', #{student.sNumber}, '%')</if>
+        <if test="student.status != null "> and s.status = #{student.status}</if>
+
+    </select>
+
+    <!--根据学员学号查询学员-->
+    <select id="getStudentBySNumber" resultMap="StudentResult">
+        select
+            s.*
+        from student s
+        where
+        s.s_number = #{username}
+        limit 1
+    </select>
+
+    <select id="getStudentByIdNumberOnEdit" resultMap="StudentResult">
+        SELECT
+            s.*
+        FROM
+            student s
+        WHERE
+            s.s_number = #{loginName}
+            AND del_flag = 0
+            and s.student_id != (
+                SELECT
+                su.student_id
+            FROM
+                sys_user u LEFT JOIN student_user su on u.user_id = su.user_id
+            WHERE
+                u.user_id = #{userId}
+            LIMIT 1
+            )
+            LIMIT 1
+    </select>
+
+    <select id="checkInGroup" resultMap="StudentResult">
+        SELECT
+            s.*
+        FROM
+            student s
+            LEFT JOIN group_user gu ON s.student_id = gu.student_id
+            WHERE
+            gu.group_id = #{groupId}
+            and s.student_id = #{studentId}
+            and s.del_flag= 0
+	        and s.`status` = 0
+	    limit 1
+    </select>
+
+</mapper>

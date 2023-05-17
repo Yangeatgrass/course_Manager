@@ -1,0 +1,557 @@
+<!DOCTYPE html>
+<html lang="zh" xmlns:th="http://www.thymeleaf.org" >
+<head>
+    <th:block th:include="include :: header('资源统计')"/>
+    <th:block th:include="include :: select2-css"/>
+
+</head>
+<body class="gray-bg">
+
+<div class="row  border-bottom white-bg dashboard-header">
+
+    <div class="container-div" style="margin-bottom: 20px">
+        <div class="row">
+            <div class="col-sm-12 search-collapse">
+                <form id="formId">
+                    <div class="select-list">
+                        <ul>
+                            <li>
+                                课题名称：<!--<input type="text" name="courseName"/>-->
+                                <select id="selectT" name="courseId" class="form-control" onchange="ckCourse()">
+                                    <option value="">--选择课题--</option>
+                                    <option th:each="course:${courses}" th:value="${course.courseId}"
+                                            th:text="${course.courseName}"></option>
+                                </select>
+                            </li>
+                            <li>
+                                小组名称：<!--<input type="text" name="courseName"/>-->
+                                <select id="selectG" name="groupId" class="form-control" onchange="ckGroup()">
+                                    <option value="">--选择小组--</option>
+                                </select>
+                            </li>
+                            <li>
+                                学员名称：<!--<input type="text" name="courseName"/>-->
+                                <select id="selectS" name="userId" class="form-control">
+                                    <option value="">--选择学员--</option>
+                                </select>
+                            </li>
+
+                            <li>
+                                <label>文件类型：</label>
+                                <select id="fileType" name="fileType" class="form-control"
+                                        th:with="type=${@dict.getType('sys_file_type')}">
+                                    <option th:each="dict : ${type}" th:text="${dict.dictLabel}"
+                                            th:value="${dict.dictValue}" th:if="${dict.dictValue != '-1'}"></option>
+                                </select>
+                            </li>
+                            <li class="select-time">
+                                <label>上传时间： </label>
+                                <input type="text" class="time-input" id="startTime" placeholder="开始时间"
+                                       name="params[beginTime]"/>
+                                <span>-</span>
+                                <input type="text" class="time-input" id="endTime" placeholder="结束时间"
+                                       name="params[endTime]"/>
+                            </li>
+                            <li>
+                                <a class="btn btn-primary btn-rounded btn-sm" onclick="statisticsSearch()"><i
+                                        class="fa fa-search"></i>&nbsp;搜索</a>
+                                <a class="btn btn-warning btn-rounded btn-sm" onclick="resetPre()"><i
+                                        class="fa fa-refresh"></i>&nbsp;重置</a>
+                            </li>
+                        </ul>
+                    </div>
+                </form>
+            </div>
+
+            <!--        <div class="col-sm-12 select-table table-striped">-->
+            <!--            <table id="bootstrap-table"></table>-->
+            <!--        </div>-->
+        </div>
+    </div>
+
+    <div class="col-sm-12">
+        <div class="col-sm-3">
+            <div class="ibox">
+                <div class="ibox-content">
+                    <h3>资源文件大小</h3>
+                    <h1 class="no-margins" id="resoueSize" >0</h1>
+                    <div class="stat-percent font-bold text-navy"> <i class="fa fa-bolt"></i></div>
+                    <small>————————————————————</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-sm-3">
+            <div class="ibox">
+                <div class="ibox-content">
+                    <h3>用户登录次数</h3>
+                    <h1 class="no-margins" id="loginCount">0</h1>
+                    <div class="stat-percent font-bold text-navy"> <i class="fa fa-bolt"></i></div>
+                    <small>————————————————————</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-sm-3">
+            <div class="ibox">
+                <div class="ibox-content">
+                    <h3>用户上传次数</h3>
+                    <h1 class="no-margins" id="uploadCount">0</h1>
+                    <div class="stat-percent font-bold text-navy"> <i class="fa fa-bolt"></i></div>
+                    <small>————————————————————</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-sm-3">
+            <div class="ibox">
+                <div class="ibox-content">
+                    <h3>用户下载次数</h3>
+                    <h1 class="no-margins" id="downloadCount">0</h1>
+                    <div class="stat-percent font-bold text-navy"> <i class="fa fa-bolt"></i></div>
+                    <small>————————————————————</small>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="wrapper wrapper-content animated fadeInRight">
+    <div class="row">
+        <div class="col-sm-6">
+            <div class="ibox float-e-margins">
+                <div class="ibox-title">
+                    <h5>饼状图</h5>
+                    <div class="ibox-tools">
+<!--                        <a class="collapse-link">-->
+<!--                            <i class="fa fa-chevron-up"></i>-->
+<!--                        </a>-->
+<!--                        <a class="dropdown-toggle" data-toggle="dropdown" href="#">-->
+<!--                            <i class="fa fa-wrench"></i>-->
+<!--                        </a>-->
+<!--                        <ul class="dropdown-menu dropdown-user">-->
+<!--                            <li><a href="#">选项1</a>-->
+<!--                            </li>-->
+<!--                            <li><a href="#">选项2</a>-->
+<!--                            </li>-->
+<!--                        </ul>-->
+<!--                        <a class="close-link">-->
+<!--                            <i class="fa fa-times"></i>-->
+<!--                        </a>-->
+                    </div>
+                </div>
+                <div class="ibox-content">
+                    <div class="echarts" id="echarts-pie-chart"></div>
+                </div>
+            </div>
+        </div>
+        <div class="col-sm-6">
+            <div class="ibox float-e-margins">
+                <div class="ibox-title">
+                    <h5>折线图</h5>
+                    <div class="ibox-tools">
+<!--                        <a class="collapse-link">-->
+<!--                            <i class="fa fa-chevron-up"></i>-->
+<!--                        </a>-->
+<!--                        <a class="dropdown-toggle" data-toggle="dropdown" href="#">-->
+<!--                            <i class="fa fa-wrench"></i>-->
+<!--                        </a>-->
+<!--                        <ul class="dropdown-menu dropdown-user">-->
+<!--                            <li><a href="#">选项1</a>-->
+<!--                            </li>-->
+<!--                            <li><a href="#">选项2</a>-->
+<!--                            </li>-->
+<!--                        </ul>-->
+<!--                        <a class="close-link">-->
+<!--                            <i class="fa fa-times"></i>-->
+<!--                        </a>-->
+                    </div>
+                </div>
+                <div class="ibox-content">
+                    <div class="echarts" id="echarts-line-chart"></div>
+                </div>
+            </div>
+        </div>
+<!--        <div class="col-sm-6">-->
+<!--            <div class="ibox float-e-margins">-->
+<!--                <div class="ibox-title">-->
+<!--                    <h5>柱状图</h5>-->
+<!--                    <div class="ibox-tools">-->
+<!--&lt;!&ndash;                        <a class="collapse-link">&ndash;&gt;-->
+<!--&lt;!&ndash;                            <i class="fa fa-chevron-up"></i>&ndash;&gt;-->
+<!--&lt;!&ndash;                        </a>&ndash;&gt;-->
+<!--&lt;!&ndash;                        <a class="dropdown-toggle" data-toggle="dropdown" href="#">&ndash;&gt;-->
+<!--&lt;!&ndash;                            <i class="fa fa-wrench"></i>&ndash;&gt;-->
+<!--&lt;!&ndash;                        </a>&ndash;&gt;-->
+<!--&lt;!&ndash;                        <ul class="dropdown-menu dropdown-user">&ndash;&gt;-->
+<!--&lt;!&ndash;                            <li><a href="#">选项1</a>&ndash;&gt;-->
+<!--&lt;!&ndash;                            </li>&ndash;&gt;-->
+<!--&lt;!&ndash;                            <li><a href="#">选项2</a>&ndash;&gt;-->
+<!--&lt;!&ndash;                            </li>&ndash;&gt;-->
+<!--&lt;!&ndash;                        </ul>&ndash;&gt;-->
+<!--&lt;!&ndash;                        <a class="close-link">&ndash;&gt;-->
+<!--&lt;!&ndash;                            <i class="fa fa-times"></i>&ndash;&gt;-->
+<!--&lt;!&ndash;                        </a>&ndash;&gt;-->
+<!--                    </div>-->
+<!--                </div>-->
+<!--                <div class="ibox-content">-->
+
+<!--                    <div class="echarts" id="echarts-bar-chart"></div>-->
+<!--                </div>-->
+<!--            </div>-->
+<!--        </div>-->
+    </div>
+</div>
+</div>
+
+<th:block th:include="include :: footer"/>
+<th:block th:include="include :: echarts-js"/>
+<th:block th:include="include :: peity-js"/>
+<th:block th:include="include :: sparkline-js"/>
+<th:block th:include="include :: select2-js"/>
+
+
+<script th:inline="javascript">
+
+    var downloadFlag = [[${@permission.hasPermi('system:resource:download')}]];
+
+    var fileType = [[${@dict.getType('sys_file_type')}]];
+
+
+    var prefix = ctx + "system/retrieval";
+
+    var pieoption = {
+        title: {
+            text: '某站点用户访问来源',
+            subtext: '',
+            x: 'center'
+        },
+        tooltip: {
+            trigger: 'item',
+            formatter: "{a} <br/>{b} : {c} ({d}%)"
+        },
+        legend: {
+            orient: 'vertical',
+            x: 'left',
+            data: ['直接访问', '邮件营销', '联盟广告', '视频广告', '搜索引擎']
+        },
+        calculable: true,
+        series: [
+            {
+                name: '访问来源',
+                type: 'pie',
+                radius: '55%',
+                center: ['50%', '60%'],
+                data: [
+                    {value: 335, name: '直接访问'},
+                    {value: 310, name: '邮件营销'},
+                    {value: 234, name: '联盟广告'},
+                    {value: 135, name: '视频广告'},
+                    {value: 1548, name: '搜索引擎'}
+                ]
+            }
+        ]
+    };
+
+    lineoption = {
+        title: {
+            text: '本周用户上传下载变化'
+        },
+        tooltip: {
+            trigger: 'axis'
+        },
+        legend: {
+            data: ['最高上传', '最高下载']
+        },
+        grid: {
+            x: 40,
+            x2: 40,
+            y2: 24
+        },
+        calculable: true,
+        xAxis: [
+            {
+                type: 'category',
+                boundaryGap: false,
+                data: ['周一', '周二', '周三', '周四', '周五', '周六', '周日']
+            }
+        ],
+        yAxis: [
+            {
+                type: 'value',
+                axisLabel: {
+                    formatter: '{value} 次'
+                }
+            }
+        ],
+        series: [
+
+        ]
+    };
+
+    var rsl = null;
+
+    //提交表单检索
+    function statisticsSearch(){
+
+        var dataArray = $("#formId").serializeArray();
+        console.log(dataArray)
+        var config = {
+            url: prefix+"/statisticsList",
+            type: "post",
+            dataType: "json",
+            data:dataArray,
+            beforeSend: function () {
+                $.modal.loading("正在处理中，请稍候...");
+            },
+            success: function(result) {
+                console.log(result);
+                rsl = result.data;
+                $("#resoueSize").html($.common.formatBytes(rsl.FilesSize.FilesSize));
+                $("#loginCount").html(rsl.LoginCount.LoginCount+" 次");
+                $("#uploadCount").html(rsl.uploadCount.uploadCount+" 次");
+                $("#downloadCount").html(rsl.downloadCount.downloadCount+" 次");
+                pieoption.title.text="文件资源类型";
+                pieoption.title.subtext = "文件个数:"+rsl.FilesSize.FileCount;//
+                pieoption.legend.data = ['文档','图片','音频','视频','压缩包','代码','其他',]
+                pieoption.series[0].data = [
+                    {value: rsl.percentage.document, name: '文档'},
+                    {value: rsl.percentage.img, name: '图片'},
+                    {value: rsl.percentage.audio, name: '音频'},
+                    {value: rsl.percentage.video, name: '视频'},
+                    {value: rsl.percentage.ysb, name: '压缩包'},
+                    {value: rsl.percentage.code, name: '代码'},
+                    {value: rsl.percentage.other, name: '其他'},
+                ]
+                pieChart(pieoption);
+                lineoption.series = [];
+                lineoption.series.push({
+                    name: '最高下载',
+                    type: 'line',
+                    data: [rsl.weekStatisc.downloadWeekCount.星期一,
+                        rsl.weekStatisc.downloadWeekCount.星期二,
+                        rsl.weekStatisc.downloadWeekCount.星期三,
+                        rsl.weekStatisc.downloadWeekCount.星期四,
+                        rsl.weekStatisc.downloadWeekCount.星期五,
+                        rsl.weekStatisc.downloadWeekCount.星期六,
+                        rsl.weekStatisc.downloadWeekCount.星期日],
+                    markPoint: {
+                        data: [
+                            {type: 'max', name: '最大值'},
+                            {type: 'min', name: '最小值'}
+                        ]
+                    },
+                    markLine: {
+                        data: [
+                            {type: 'average', name: '平均值'}
+                        ]
+                    }
+                },{
+                        name: '最高上传',
+                        type: 'line',
+                        data: [rsl.weekStatisc.uploadWeekCount.星期一,
+                            rsl.weekStatisc.uploadWeekCount.星期二,
+                            rsl.weekStatisc.uploadWeekCount.星期三,
+                            rsl.weekStatisc.uploadWeekCount.星期四,
+                            rsl.weekStatisc.uploadWeekCount.星期五,
+                            rsl.weekStatisc.uploadWeekCount.星期六,
+                            rsl.weekStatisc.uploadWeekCount.星期日],
+                        markPoint: {
+                            data: [
+                                {type: 'max', name: '最大值'},
+                                {type: 'min', name: '最小值'}
+                            ]
+                        },
+                        markLine: {
+                            data: [
+                                {type: 'average', name: '平均值'}
+                            ]
+                        }
+                    }
+                )
+                lineChart(lineoption);
+                //关闭遮罩层
+                $.modal.closeLoading();
+            }
+        };
+        $.ajax(config)
+    }
+
+    //选择小组之后触发
+    function ckGroup(){
+        var groupId = $("#selectG option:selected").val();
+        console.log(groupId)
+        if (groupId){
+            //根据小组id查询所有学员
+            var config = {
+                url: prefix+"/getStudentsByGroupId/"+groupId,
+                type: "post",
+                beforeSend: function () {
+                    $.modal.loading("正在处理中，请稍候...");
+                },
+                success: function(result) {
+                    console.log(result);
+                    var students = result.data;
+                    //清除option
+                    $("#selectS").empty();
+                    $("#selectS").append("<option value=''>--不选择--</option>");
+                    //动态添加option
+                    for (let i = 0; i < students.length; i++) {
+                        $("#selectS").append('<option value="'+students[i].studentId+'" >'+students[i].studentName+'</option>')
+                    }
+                    $("#selectS")[0].selectedIndex = -1; //设置默认不选中 否则第一项选不了的bug
+                    //关闭遮罩层
+                    $.modal.closeLoading();
+
+                }
+            };
+            $.ajax(config)
+        }
+
+    }
+
+    //选择课题之后触发
+    function ckCourse(){
+        var courseId = $("#selectT option:selected").val()
+        console.log(courseId)
+        //根据课题id查询小组list
+        var config = {
+            url: prefix+"/getGroupsByCourseId/"+courseId,
+            type: "post",
+            beforeSend: function () {
+                $.modal.loading("正在处理中，请稍候...");
+            },
+            success: function(result) {
+                console.log(result);
+                var groups = result.data;
+                //清除option
+                $("#selectG").empty();
+                $("#selectG").append("<option value=''>--不选择--</option>");
+                //动态添加option
+                for (let i = 0; i < groups.length; i++) {
+                    $("#selectG").append('<option value="'+groups[i].groupId+'" >'+groups[i].groupName+'</option>')
+                }
+                $("#selectG")[0].selectedIndex = -1; //设置默认不选中 否则第一项选不了的bug
+                //关闭遮罩层
+                $.modal.closeLoading();
+
+            }
+        };
+        if(!$.common.isEmpty(courseId)){
+            $.ajax(config)
+        }
+
+    }
+
+    function pieChart(pieoption){
+        var pieChart = echarts.init(document.getElementById("echarts-pie-chart"));
+        var pieoption = pieoption;
+        pieChart.setOption(pieoption);
+        $(window).resize(pieChart.resize);
+    }
+
+    function lineChart(lineoption){
+        var lineChart = echarts.init(document.getElementById("echarts-line-chart"));
+        var lineoption = lineoption;
+        lineChart.setOption(lineoption);
+        $(window).resize(lineChart.resize);
+    }
+
+    $(function () {
+
+        statisticsSearch();
+
+        //饼状
+        var pieChart = echarts.init(document.getElementById("echarts-pie-chart"));
+        var pieoption = {};
+        pieChart.setOption(pieoption);
+        $(window).resize(pieChart.resize);
+
+        // //柱状图
+        // var barChart = echarts.init(document.getElementById("echarts-bar-chart"));
+        // var baroption = {
+        //     title: {
+        //         text: '某地区蒸发量和降水量'
+        //     },
+        //     tooltip: {
+        //         trigger: 'axis'
+        //     },
+        //     legend: {
+        //         data: ['蒸发量', '降水量']
+        //     },
+        //     grid: {
+        //         x: 30,
+        //         x2: 40,
+        //         y2: 24
+        //     },
+        //     calculable: true,
+        //     xAxis: [
+        //         {
+        //             type: 'category',
+        //             data: ['1月', '2月', '3月', '4月', '5月', '6月', '7月', '8月', '9月', '10月', '11月', '12月']
+        //         }
+        //     ],
+        //     yAxis: [
+        //         {
+        //             type: 'value'
+        //         }
+        //     ],
+        //     series: [
+        //         {
+        //             name: '蒸发量',
+        //             type: 'bar',
+        //             data: [2.0, 4.9, 7.0, 23.2, 25.6, 76.7, 135.6, 162.2, 32.6, 20.0, 6.4, 3.3],
+        //             markPoint: {
+        //                 data: [
+        //                     {type: 'max', name: '最大值'},
+        //                     {type: 'min', name: '最小值'}
+        //                 ]
+        //             },
+        //             markLine: {
+        //                 data: [
+        //                     {type: 'average', name: '平均值'}
+        //                 ]
+        //             }
+        //         },
+        //         {
+        //             name: '降水量',
+        //             type: 'bar',
+        //             data: [2.6, 5.9, 9.0, 26.4, 28.7, 70.7, 175.6, 182.2, 48.7, 18.8, 6.0, 2.3],
+        //             markPoint: {
+        //                 data: [
+        //                     {name: '年最高', value: 182.2, xAxis: 7, yAxis: 183, symbolSize: 18},
+        //                     {name: '年最低', value: 2.3, xAxis: 11, yAxis: 3}
+        //                 ]
+        //             },
+        //             markLine: {
+        //                 data: [
+        //                     {type: 'average', name: '平均值'}
+        //                 ]
+        //             }
+        //         }
+        //     ]
+        // };
+        // barChart.setOption(baroption);
+        // window.onresize = barChart.resize;
+
+        //线型图
+        var lineChart = echarts.init(document.getElementById("echarts-line-chart"));
+        var lineoption = {
+        };
+        lineChart.setOption(lineoption);
+        $(window).resize(lineChart.resize);
+
+
+
+
+    });
+
+    /* 表单重置 */
+    function resetPre() {
+        // resetDate();
+        // $("#selectG option[value=''] ").attr("selected",true)
+        // $("#selectS option[value=''] ").attr("selected",true)
+        // console.log(11)
+        // $("#formId")[0].reset();
+        // $.table.search();
+        window.location.reload();
+    }
+</script>
+</body>
+</html>

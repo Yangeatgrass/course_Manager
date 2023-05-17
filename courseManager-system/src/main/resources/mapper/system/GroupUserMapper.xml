@@ -1,0 +1,139 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.courseManager.system.mapper.GroupUserMapper">
+
+    <resultMap type="GroupUser" id="GroupUserResult">
+        <result property="guId"    column="gu_id"    />
+        <result property="groupId"    column="group_id"    />
+        <result property="studentId"    column="student_id"    />
+        <result property="isManager"    column="is_manager"    />
+        <result property="joinTime"    column="join_time"    />
+        <result property="invite"    column="invite"    />
+        <result property="studentName"    column="student_name"    />
+        <result property="groupName"    column="group_name"    />
+    </resultMap>
+
+    <sql id="selectGroupUserVo">
+        select gu_id, group_id, student_id, is_manager, join_time, invite from group_user
+    </sql>
+
+    <select id="selectGroupUserList" parameterType="GroupUser" resultMap="GroupUserResult">
+        <include refid="selectGroupUserVo"/>
+        <where>
+            <if test="groupId != null "> and group_id = #{groupId}</if>
+            <if test="studentId != null "> and student_id = #{studentId}</if>
+            <if test="isManager != null "> and is_manager = #{isManager}</if>
+            <if test="joinTime != null "> and join_time = #{joinTime}</if>
+            <if test="invite != null "> and invite = #{invite}</if>
+        </where>
+    </select>
+
+    <select id="selectGroupUserByGuId" parameterType="Long" resultMap="GroupUserResult">
+        <include refid="selectGroupUserVo"/>
+        where gu_id = #{guId}
+    </select>
+
+    <insert id="insertGroupUser" parameterType="GroupUser">
+        insert into group_user
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="guId != null">gu_id,</if>
+            <if test="groupId != null">group_id,</if>
+            <if test="studentId != null">student_id,</if>
+            <if test="isManager != null">is_manager,</if>
+            <if test="joinTime != null">join_time,</if>
+            <if test="invite != null">invite,</if>
+         </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="guId != null">#{guId},</if>
+            <if test="groupId != null">#{groupId},</if>
+            <if test="studentId != null">#{studentId},</if>
+            <if test="isManager != null">#{isManager},</if>
+            <if test="joinTime != null">#{joinTime},</if>
+            <if test="invite != null">#{invite},</if>
+         </trim>
+    </insert>
+
+    <update id="updateGroupUser" parameterType="GroupUser">
+        update group_user
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="groupId != null">group_id = #{groupId},</if>
+            <if test="studentId != null">student_id = #{studentId},</if>
+            <if test="isManager != null">is_manager = #{isManager},</if>
+            <if test="joinTime != null">join_time = #{joinTime},</if>
+            <if test="invite != null">invite = #{invite},</if>
+        </trim>
+        where gu_id = #{guId}
+    </update>
+
+    <delete id="deleteGroupUserByGuId" parameterType="Long">
+        delete from group_user where gu_id = #{guId}
+    </delete>
+
+    <delete id="deleteGroupUserByGuIds" parameterType="String">
+        delete from group_user where gu_id in
+        <foreach item="guId" collection="array" open="(" separator="," close=")">
+            #{guId}
+        </foreach>
+    </delete>
+
+    <!--根据小组id删除小组学员关联信息-->
+    <delete id="deleteGroupUserByGroupId">
+        DELETE
+        FROM
+            group_user
+        WHERE
+            group_id = #{gid}
+    </delete>
+
+    <!--根据小组id批量删除小组学员关联信息-->
+    <delete id="deleteGroupUserByGroupIds" parameterType="String">
+        delete from group_user where group_id in
+        <foreach item="gid" collection="array" open="(" separator="," close=")">
+            #{gid}
+        </foreach>
+    </delete>
+
+    <!--根据小组id查询小组的学员-->
+    <select id="selectInGroupStudent" resultMap="GroupUserResult">
+    SELECT
+	    gu.*,
+	    g.group_name,
+	    s.student_name
+	from
+	    group_user gu LEFT JOIN `group` g on gu.group_id = g.group_id
+	    LEFT JOIN student s on s.student_id = gu.student_id
+	WHERE
+	    gu.group_id = #{groupId}
+	    and g.del_flag = 0
+	    and s.del_flag = 0
+    </select>
+
+    <!--根据小组id和用户id查询学员-->
+    <select id="selectInGroupStudentOne" resultMap="GroupUserResult">
+        SELECT
+            gu.*,
+            g.group_name,
+            s.student_name
+        from
+            group_user gu LEFT JOIN `group` g on gu.group_id = g.group_id
+            LEFT JOIN student s on s.student_id = gu.student_id
+        WHERE
+            gu.group_id = #{groupId} and gu.student_id = #{userId}
+            and g.del_flag = 0
+            and s.del_flag = 0
+    </select>
+
+    <delete id="deleteGourpUserByuIds">
+        delete from group_user where group_id = #{aLong} and student_id in
+        <foreach item="uid" collection="uIds" open="(" separator="," close=")">
+            #{uid}
+        </foreach>
+    </delete>
+
+    <!--退出小组-->
+    <delete id="deleteGroupUser">
+                delete from group_user where group_id = #{groupUser.groupId} and student_id = #{groupUser.studentId}
+    </delete>
+</mapper>

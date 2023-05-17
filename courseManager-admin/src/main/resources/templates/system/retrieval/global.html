@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="zh" xmlns:th="http://www.thymeleaf.org" >
+<head>
+    <th:block th:include="include :: header('资源全局检索')"/>
+    <th:block th:include="include :: layout-latest-css"/>
+    <th:block th:include="include :: select2-css"/>
+
+
+</head>
+<body class="gray-bg">
+<div class="container-div">
+    <div class="row">
+        <div class="col-sm-12 search-collapse">
+            <form id="formId">
+                <div class="select-list">
+                    <ul>
+                        <li>
+                            课题名称：<input type="text" name="courseName"/>
+                        </li>
+                        <li>
+                            文件名：<input type="text" name="fileName"/>
+                        </li>
+                        <li>
+                            学期：<input type="text" name="courseDate"/>
+                        </li>
+                        <li>
+                            <label>文件类型：</label>
+                            <select name="fileType" class="form-control" th:with="type=${@dict.getType('sys_file_type')}">
+                                <option th:each="dict : ${type}" th:text="${dict.dictLabel}"
+                                        th:value="${dict.dictValue}" th:if="${dict.dictValue != '-1'}"></option>
+                            </select>
+                        </li>
+                        <li class="select-time">
+                            <label>上传时间： </label>
+                            <input type="text" class="time-input" id="startTime" placeholder="开始时间"
+                                   name="params[beginTime]"/>
+                            <span>-</span>
+                            <input type="text" class="time-input" id="endTime" placeholder="结束时间"
+                                   name="params[endTime]"/>
+                        </li>
+                        <li>
+                            上传人：<input type="text" name="createBy"/>
+                        </li>
+                        <li>
+                            <a class="btn btn-primary btn-rounded btn-sm" onclick="$.table.search()"><i
+                                    class="fa fa-search"></i>&nbsp;搜索</a>
+                            <a class="btn btn-warning btn-rounded btn-sm" onclick="resetPre()"><i
+                                    class="fa fa-refresh"></i>&nbsp;重置</a>
+                        </li>
+                    </ul>
+                </div>
+            </form>
+        </div>
+
+        <div class="col-sm-12 select-table table-striped">
+            <table id="bootstrap-table"></table>
+        </div>
+    </div>
+</div>
+<th:block th:include="include :: footer"/>
+<th:block th:include="include :: layout-latest-js"/>
+<th:block th:include="include :: select2-js"/>
+
+
+
+<script th:inline="javascript">
+
+    var downloadFlag = [[${@permission.hasPermi('system:resource:download')}]];
+
+    var fileType = [[${@dict.getType('sys_file_type')}]];
+
+
+    var prefix = ctx + "system/retrieval";
+
+    $(function () {
+        var options = {
+            url: prefix + "/globalList",
+            createUrl: prefix + "/add",
+            updateUrl: prefix + "/edit/{id}",
+            removeUrl: prefix + "/remove",
+            exportUrl: prefix + "/export",
+            modalName: "资源全局检索",
+            sortName: "createTime",
+            sortOrder: "desc",
+            columns: [{
+                checkbox: true,
+            },
+                {
+                    field: 'fileId',
+                    title: '文件ID',
+                    visible: false
+                },
+                {
+                    field: 'courseName',
+                    title: '课程名称',
+                    width: '200px',
+                    sortable: true,
+                    formatter: function (value, row, index) {
+                        return $.table.tooltip(value);
+                    }
+                },
+                {
+                    field: 'fileName',
+                    title: '文件名',
+                    align: 'left',
+                    width: '300px',
+                    formatter: function (value, row, index) {
+                        if (row.fileType === -1) {
+                            //文件夹
+                            return '<i class="glyphicon glyphicon-folder-open"></i> &nbsp; <a onclick="openFolder(\'' + row.fileId + '\',\'' + row.fileName + '\',\'' + row.parentId + '\')">' + row.fileName + '</a>'
+                        } else {
+                            if (row.fileType === 1) {
+                                return '<i class=\"glyphicon glyphicon-list-alt\"></i> &nbsp; <a onclick="onClickCell(\'' + row.fileType + '\',\'' + row.filePath + '\',\'' + row.fileId + '\')">' + row.fileName + '</a>'
+                            }
+                            if (row.fileType === 2) {
+                                return '<i class=\"glyphicon glyphicon-picture\"></i> &nbsp; <a onclick="onClickCell(\'' + row.fileType + '\',\'' + row.filePath + '\',\'' + row.fileId + '\')">' + row.fileName + '</a>'
+                            }
+                            if (row.fileType === 3) {
+                                return '<i class=\"glyphicon glyphicon-cd\"></i> &nbsp; <a onclick="onClickCell(\'' + row.fileType + '\',\'' + row.filePath + '\',\'' + row.fileId + '\')">' + row.fileName + '</a>'
+                            }
+                            if (row.fileType === 4) {
+                                return '<i class=\"glyphicon glyphicon-film\"></i> &nbsp; <a onclick="onClickCell(\'' + row.fileType + '\',\'' + row.filePath + '\',\'' + row.fileId + '\')">' + row.fileName + '</a>'
+                            }
+                            if (row.fileType === 5) {
+                                return '<i class=\"glyphicon glyphicon-book\"></i> &nbsp; <a onclick="onClickCell(\'' + row.fileType + '\',\'' + row.filePath + '\',\'' + row.fileId + '\')">' + row.fileName + '</a>'
+                            }
+                            //其他
+                            return '<i class=\"glyphicon glyphicon-file\"></i> &nbsp; <a onclick="">' + row.fileName + '</a>'
+                        }
+                    }
+                },
+                {
+                    field: 'courseDate',
+                    title: '学期',
+                    align: "center",
+                    width: '100px',
+                    formatter: function (value, row, index) {
+                        return $.table.tooltip(value);
+                    }
+                },
+                {
+                    field: 'fileType',
+                    title: '文件类型',
+                    align: "center",
+                    formatter: function (value, row, index) {
+                        return $.table.selectDictLabel(fileType, value);
+                    }
+                },
+                {
+                    field: 'fileSize',
+                    title: '文件大小',
+                    align: 'right',
+                    width: '100px',
+                    formatter: function (value, row, index) {
+                        if (row.fileType != -1) {
+                            return value;
+                        } else {
+                            return '-'
+                        }
+                    }
+                },
+                {
+                    field: 'downloadCount',
+                    title: '下载次数',
+                    align: "center",
+                },
+                {
+                    field: 'delFlag',
+                    title: '文件状态',
+                    align: "center",
+                    formatter: function (value, row, index) {
+                        if (row.delFlag == 1) {
+                            return '<span class="badge badge-danger">已删除</span>'
+                        } else {
+                            return '<span class="badge badge-primary">正 常</span>'
+                        }
+                    }
+                },
+                {
+                    field: 'createBy',
+                    title: '上传人',
+                    align: "center",
+                    width: '200px',
+                },
+                {
+                    field: 'createTime',
+                    title: '上传时间',
+                    align: "center",
+                    sortable: true,
+                    formatter: function (value, row, index) {
+                        return row.createTime;
+                    }
+                },
+                {
+                    title: '操作',
+                    align: 'center',
+                    formatter: function (value, row, index) {
+                        var actions = [];
+                        actions.push('<a class="btn btn-info' + downloadFlag + ' btn-xs" href="javascript:void(0)" onclick="downloadFile(\'' + row.fileId + '\')"><i class="fa fa-download"></i>下载</a> ');
+
+                        return actions.join('');
+                    }
+                }]
+        };
+        $.table.init(options);
+    });
+
+    //下载文件
+    function downloadFile(fileId) {
+        $.modal.confirm("确定下载此文件吗？", function () {
+            $.modal.loading("正在下载，请稍候...");
+            window.location.href = ctx + "common/download/resource?fileId=" + fileId;
+            $.modal.closeLoading();
+        });
+    }
+
+
+    /* 表单重置 */
+    function resetPre() {
+        window.location.reload();
+
+    }
+
+    //预览
+    function onClickCell(type, path, fId) {
+        var fileExtension = path.substring(path.lastIndexOf('.') + 1);
+        if (type == 1 && fileExtension == 'pdf') {
+            var openUrl = '';
+            var config = {
+                url: ctx + "system/file/pdfPreview/" + fId,
+                type: 'post',
+                success: function (result) {
+                    openUrl = result.msg;
+                    window.open(openUrl)
+                }
+            };
+            $.ajax(config)
+        }
+        if (type == 1 && fileExtension == 'txt') {
+            layer.open({
+                type: 1,
+                title: '文本预览',
+                closeBtn: 0,
+                offset: 'auto',
+                area: ['80%', '80%'],
+                closeBtn: 1,
+                // skin: 'layui-layer-nobg', //没有背景色
+                shadeClose: true,
+                content: '<iframe height="100%" width="100%" src="' + path + '" ></iframe>',
+            });
+        }
+        if (type == 2) {
+            layer.open({
+                type: 1,
+                title: '图片预览',
+                closeBtn: 0,
+                offset: 'auto',
+                area: ['80%', '80%'],
+                closeBtn: 1,
+                // skin: 'layui-layer-nobg', //没有背景色
+                shadeClose: true,
+                content: '<img style="" src="' + path + '">',
+
+            });
+        }
+        if (type == 4) {
+            layer.open({
+                type: 1,
+                title: '视频预览',
+                closeBtn: 0,
+                offset: 'auto',
+                area: ['753px', '470px'],
+                closeBtn: 1,
+                skin: 'layui-layer-nobg', //没有背景色
+                shadeClose: true,
+                content: '<video controls="controls" controlslist="nodownload  nofullscreen noremoteplayback"> <source type="video/mp4" src="' + path + '"/></video>'
+            });
+        }
+    }
+</script>
+</body>
+</html>
